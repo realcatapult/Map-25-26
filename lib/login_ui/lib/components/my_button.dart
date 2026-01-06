@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class MyButton extends StatelessWidget {
   final VoidCallback? onTap;
 
-  const MyButton({Key? key, this.onTap}) : super(key: key);
+  const MyButton({super.key, this.onTap});
 
 
 
