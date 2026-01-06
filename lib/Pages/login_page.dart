@@ -27,11 +27,20 @@ class LoginPage extends StatelessWidget {
               children: [
                 const SizedBox(height: 50),
 
-                // logo
-                const Icon(
-                  Icons.lock,
-                  size: 100,
+                // App name
+                const Text(
+                  'My app',
+                  style: TextStyle(
+                    fontSize: 45,
+                    fontWeight: FontWeight.bold
+                  ),
                 ),
+
+                // logo
+                // const Icon(
+                  // Icons.lock,
+                  // size: 45,
+                // ),
                 const SizedBox(height: 50),
 
                 // welcome back
