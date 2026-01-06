@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "cleanup-keep-login-ui",
+			"type": "shell",
+			"command": "cd /Users/andy/Map-24-25 && rm -rf android ios linux macos windows web test analysis_options.yaml firebase.json README.md pubspec.yaml pubspec.lock .metadata .flutter-plugins-dependencies .dart_tool lib/Loginpage lib/firebase_options.dart lib/main.dart lib/Pages lib/components",
+			"args": [],
+			"isBackground": false
+		},
+		{
+			"label": "cleanup-keep-login-ui",
+			"type": "shell",
+			"command": "cd /Users/andy/Map-24-25 && rm -rf android ios linux macos windows web test analysis_options.yaml firebase.json README.md pubspec.yaml pubspec.lock .metadata .flutter-plugins-dependencies .dart_tool lib/Loginpage lib/firebase_options.dart lib/main.dart lib/Pages lib/components",
+			"isBackground": false
+		}
+	]
+}
