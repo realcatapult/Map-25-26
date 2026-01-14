@@ -2,16 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/components/my_button.dart';
 import 'package:login_ui/components/square_tile.dart';
+import 'package:login_ui/services/auth_service.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  final VoidCallback? showRegisterPage;
 
+  const LoginPage({super.key, this.showRegisterPage});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   // text editing controllers
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
-  // sign user in method (placeholder)
-  void signUserIn() {}
+  // sign user in method
+  void signUserIn() async {
+    try {
+      await _authService.signInWithEmailPassword(
+        emailController.text.trim(),
+        passwordController.text,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,33 +59,27 @@ class LoginPage extends StatelessWidget {
                 // App name
                 const Text(
                   'My app',
-                  style: TextStyle(
-                    fontSize: 45,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold),
                 ),
 
                 // logo
                 // const Icon(
-                  // Icons.lock,
-                  // size: 45,
+                // Icons.lock,
+                // size: 45,
                 // ),
                 const SizedBox(height: 50),
 
                 // welcome back
                 Text(
                   'Welcome back!',
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 16),
                 ),
                 const SizedBox(height: 10),
 
-                // Username
+                // Email
                 MyTextField(
-                  controller: usernameController,
-                  hintText: 'Username',
+                  controller: emailController,
+                  hintText: 'Email',
                   obscureText: false,
                 ),
                 const SizedBox(height: 16),
@@ -85,22 +108,16 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 25),
 
                 // Sign in button
-                MyButton(
-                  onTap: signUserIn,
-                ),
+                MyButton(onTap: signUserIn),
                 const SizedBox(height: 40),
 
                 // Divider with text
-                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: Row(
                     children: [
                       Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
+                        child: Divider(thickness: 0.5, color: Colors.grey[400]),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -110,16 +127,11 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                       Expanded(
-                        child: Divider(
-                          thickness: 0.5,
-                          color: Colors.grey[400],
-                        ),
+                        child: Divider(thickness: 0.5, color: Colors.grey[400]),
                       ),
                     ],
                   ),
                 ),
-
-              
 
                 const SizedBox(height: 5),
 
@@ -168,7 +180,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: widget.showRegisterPage,
                       child: const Text(
                         'Register now',
                         style: TextStyle(
