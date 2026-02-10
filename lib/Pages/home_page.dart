@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:login_ui/services/auth_service.dart';
+import 'package:login_ui/Pages/chat_list_page.dart';
+import 'package:login_ui/Pages/settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,7 +11,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final AuthService _authService = AuthService();
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   int _selectedIndex = 0;
@@ -45,6 +45,22 @@ class _HomePageState extends State<HomePage> {
   ];
 
   void _onItemTapped(int index) {
+    if (index == 1) {
+      // Navigate to Chat page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ChatListPage()),
+      );
+      return;
+    }
+    if (index == 4) {
+      // Navigate to Settings page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SettingsPage()),
+      );
+      return;
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -56,13 +72,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.grey[300],
       appBar: AppBar(
         backgroundColor: Colors.grey[900],
-        title: const Text('My app', style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () => _authService.signOut(),
-          ),
-        ],
+        title: const Text('GroupApp', style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [

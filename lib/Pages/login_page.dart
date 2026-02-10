@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 // App name
                 const Text(
-                  'My app',
+                  'GroupApp',
                   style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold),
                 ),
 

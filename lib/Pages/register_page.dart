@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/services/auth_service.dart';
+import 'package:login_ui/services/chat_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class RegisterPage extends StatefulWidget {
   final VoidCallback showLoginPage;
@@ -18,6 +21,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   final AuthService _authService = AuthService();
+  final ChatService _chatService = ChatService();
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _profileImage;
 
   // sign user up method
   void signUserUp() async {
@@ -33,12 +39,31 @@ class _RegisterPageState extends State<RegisterPage> {
         emailController.text.trim(),
         passwordController.text,
       );
+
+      // Upload profile picture if selected
+      if (_profileImage != null) {
+        final imageUrl = await _chatService.uploadProfilePicture(
+          _profileImage!,
+        );
+        await _chatService.updateProfilePicture(imageUrl);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
+    }
+  }
+
+  void _pickProfilePicture() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (image != null) {
+      setState(() {
+        _profileImage = File(image.path);
+      });
     }
   }
 
@@ -66,7 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // App name
                 const Text(
-                  'My app',
+                  'GroupApp',
                   style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold),
                 ),
 
@@ -76,6 +101,31 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   "Let's create an account for you!",
                   style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                ),
+                const SizedBox(height: 25),
+
+                // Profile picture picker
+                GestureDetector(
+                  onTap: _pickProfilePicture,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.grey[400],
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : null,
+                    child: _profileImage == null
+                        ? Icon(
+                            Icons.add_a_photo,
+                            size: 40,
+                            color: Colors.grey[700],
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap to add profile picture (optional)',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 const SizedBox(height: 25),
 
