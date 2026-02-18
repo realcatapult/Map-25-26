@@ -23,6 +23,10 @@ class ChatService {
   Future<String> createGroupChat(
     String groupName,
     List<String> memberEmails,
+    bool isPublic,
+    String whoCanPost,
+    int themeColor,
+    String themeIcon,
   ) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
@@ -35,6 +39,11 @@ class ChatService {
       'createdAt': FieldValue.serverTimestamp(),
       'members': [currentUser.email, ...memberEmails],
       'joinCode': joinCode,
+      'isPublic': isPublic,
+      'admins': [currentUser.email],
+      'whoCanPost': whoCanPost,
+      'themeColor': themeColor,
+      'themeIcon': themeIcon,
     });
 
     return groupDoc.id;
@@ -89,6 +98,19 @@ class ChatService {
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
+
+    final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+    final groupData = groupDoc.data();
+    if (groupData != null) {
+      final whoCanPost = groupData['whoCanPost'] ?? 'all';
+      final admins = List<String>.from(groupData['admins'] ?? []);
+      final createdBy = groupData['createdBy'] ?? '';
+      final isAdmin = admins.contains(currentUser.email) ||
+          (createdBy == currentUser.email);
+      if (whoCanPost == 'admins' && !isAdmin) {
+        throw Exception('Only admins can send messages');
+      }
+    }
 
     await _firestore
         .collection('groups')
@@ -165,6 +187,30 @@ class ChatService {
   // Get group details
   Future<DocumentSnapshot> getGroup(String groupId) {
     return _firestore.collection('groups').doc(groupId).get();
+  }
+
+  // Watch group details
+  Stream<DocumentSnapshot> watchGroup(String groupId) {
+    return _firestore.collection('groups').doc(groupId).snapshots();
+  }
+
+  // Update group settings
+  Future<void> updateGroupSettings(
+    String groupId, {
+    bool? isPublic,
+    String? whoCanPost,
+    int? themeColor,
+    String? themeIcon,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (isPublic != null) updates['isPublic'] = isPublic;
+    if (whoCanPost != null) updates['whoCanPost'] = whoCanPost;
+    if (themeColor != null) updates['themeColor'] = themeColor;
+    if (themeIcon != null) updates['themeIcon'] = themeIcon;
+
+    if (updates.isNotEmpty) {
+      await _firestore.collection('groups').doc(groupId).update(updates);
+    }
   }
 
   // Leave a group
