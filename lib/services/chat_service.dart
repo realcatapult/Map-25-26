@@ -8,6 +8,7 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  static const String demoUserEmail = 'demo@groupapp.com';
 
   // Generate a random 6-character join code
   String _generateJoinCode() {
@@ -30,14 +31,20 @@ class ChatService {
   ) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
+    if (currentUser.email == null) throw Exception('No email for user');
 
     final joinCode = _generateJoinCode();
+    final members = <String>{
+      currentUser.email!,
+      ...memberEmails.where((email) => email.isNotEmpty),
+      demoUserEmail,
+    }.toList();
 
     final groupDoc = await _firestore.collection('groups').add({
       'name': groupName,
       'createdBy': currentUser.email,
       'createdAt': FieldValue.serverTimestamp(),
-      'members': [currentUser.email, ...memberEmails],
+      'members': members,
       'joinCode': joinCode,
       'isPublic': isPublic,
       'admins': [currentUser.email],
@@ -105,7 +112,8 @@ class ChatService {
       final whoCanPost = groupData['whoCanPost'] ?? 'all';
       final admins = List<String>.from(groupData['admins'] ?? []);
       final createdBy = groupData['createdBy'] ?? '';
-      final isAdmin = admins.contains(currentUser.email) ||
+      final isAdmin =
+          admins.contains(currentUser.email) ||
           (createdBy == currentUser.email);
       if (whoCanPost == 'admins' && !isAdmin) {
         throw Exception('Only admins can send messages');
@@ -211,6 +219,73 @@ class ChatService {
     if (updates.isNotEmpty) {
       await _firestore.collection('groups').doc(groupId).update(updates);
     }
+  }
+
+  // Update group admins
+  Future<void> updateGroupAdmins(String groupId, List<String> admins) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'admins': admins,
+    });
+  }
+
+  String _directMessageId(String emailA, String emailB) {
+    final ids = [emailA.toLowerCase(), emailB.toLowerCase()]..sort();
+    return '${ids[0]}__${ids[1]}';
+  }
+
+  Future<String> getOrCreateDirectMessage(String otherEmail) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+    if (currentUser.email == null) throw Exception('No email for user');
+
+    final docId = _directMessageId(currentUser.email!, otherEmail);
+    final docRef = _firestore.collection('directMessages').doc(docId);
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      await docRef.set({
+        'participants': [currentUser.email, otherEmail],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+    return docId;
+  }
+
+  Stream<QuerySnapshot> getDirectMessages(String threadId) {
+    return _firestore
+        .collection('directMessages')
+        .doc(threadId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots();
+  }
+
+  Future<void> sendDirectMessage(String threadId, String message) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+    if (currentUser.email == null) throw Exception('No email for user');
+
+    await _firestore
+        .collection('directMessages')
+        .doc(threadId)
+        .collection('messages')
+        .add({
+          'text': message,
+          'senderEmail': currentUser.email,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+  }
+
+  Stream<QuerySnapshot> getDirectMessageThreads() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) {
+      return Stream.empty();
+    }
+
+    return _firestore
+        .collection('directMessages')
+        .where('participants', arrayContains: currentUser.email)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   // Leave a group

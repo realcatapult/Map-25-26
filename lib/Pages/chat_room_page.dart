@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:login_ui/Pages/direct_message_page.dart';
 import 'dart:io';
 
 class ChatRoomPage extends StatefulWidget {
@@ -46,6 +47,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Future<void> _showGroupSettingsDialog(
     Map<String, dynamic> groupData,
+    List<String> members,
+    List<String> admins,
+    String createdBy,
     bool isAdmin,
   ) async {
     if (!isAdmin) return;
@@ -54,6 +58,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     String whoCanPost = groupData['whoCanPost'] ?? 'all';
     int themeColor = groupData['themeColor'] ?? Colors.grey[900]!.value;
     String themeIcon = groupData['themeIcon'] ?? 'group';
+    final adminSet = {...admins};
+    if (createdBy.isNotEmpty) {
+      adminSet.add(createdBy);
+    }
 
     await showDialog(
       context: context,
@@ -77,7 +85,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: whoCanPost,
+                  initialValue: whoCanPost,
                   decoration: const InputDecoration(labelText: 'Who can post'),
                   items: const [
                     DropdownMenuItem(value: 'all', child: Text('All members')),
@@ -155,6 +163,38 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     );
                   }).toList(),
                 ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Admins',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...members.map((member) {
+                  final isCreator = member == createdBy;
+                  final isSelected = adminSet.contains(member);
+                  return CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(member),
+                    value: isSelected,
+                    onChanged: isCreator
+                        ? null
+                        : (value) {
+                            setDialogState(() {
+                              if (value == true) {
+                                adminSet.add(member);
+                              } else {
+                                adminSet.remove(member);
+                              }
+                            });
+                          },
+                    subtitle: isCreator
+                        ? const Text('Group creator')
+                        : const Text(''),
+                  );
+                }),
               ],
             ),
           ),
@@ -172,6 +212,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   themeColor: themeColor,
                   themeIcon: themeIcon,
                 );
+                await _chatService.updateGroupAdmins(
+                  widget.groupId,
+                  adminSet.toList(),
+                );
                 if (context.mounted) {
                   Navigator.pop(context);
                 }
@@ -183,6 +227,26 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _openDirectMessage(String otherEmail) async {
+    try {
+      final threadId = await _chatService.getOrCreateDirectMessage(otherEmail);
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              DirectMessagePage(threadId: threadId, otherEmail: otherEmail),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error opening DM: $e')));
+      }
+    }
   }
 
   Future<String?> _getProfilePicture(String email) async {
@@ -349,7 +413,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         final themeColor = Color(themeColorValue);
         final effectiveAdmins = admins.isNotEmpty
             ? admins
-            : (createdBy.isNotEmpty ? [createdBy] : <String>[]);
+            : (createdBy.isNotEmpty ? <String>[createdBy] : <String>[]);
         final isAdmin = effectiveAdmins.contains(currentUserEmailSafe);
         final canSend = whoCanPost == 'all' || isAdmin;
         final brightness = ThemeData.estimateBrightnessForColor(themeColor);
@@ -397,8 +461,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 IconButton(
                   icon: const Icon(Icons.settings),
                   tooltip: 'Group settings',
-                  onPressed: () =>
-                      _showGroupSettingsDialog(groupData ?? {}, isAdmin),
+                  onPressed: () => _showGroupSettingsDialog(
+                    groupData ?? {},
+                    members,
+                    effectiveAdmins,
+                    createdBy,
+                    isAdmin,
+                  ),
                 ),
               IconButton(
                 icon: const Icon(Icons.home),
@@ -468,6 +537,31 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                 color: Colors.grey[600],
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Members',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ...members.map((member) {
+                              final isSelf = member == (currentUserEmail ?? '');
+                              return Row(
+                                children: [
+                                  Expanded(child: Text(member)),
+                                  if (!isSelf)
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _openDirectMessage(member);
+                                      },
+                                      child: const Text('Message'),
+                                    ),
+                                ],
+                              );
+                            }),
                           ],
                         ),
                         actions: [
@@ -477,6 +571,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                 Navigator.pop(context);
                                 _showGroupSettingsDialog(
                                   groupData ?? {},
+                                  members,
+                                  effectiveAdmins,
+                                  createdBy,
                                   isAdmin,
                                 );
                               },
