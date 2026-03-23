@@ -337,102 +337,104 @@ class _HomePageState extends State<HomePage> {
             _syncGroups(groupDocs);
           });
 
+          final showNotifications = _selectedIndex != 2;
+
           return SafeArea(
             child: Column(
               children: [
-                // Top section - Notifications
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Notifications',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                if (showNotifications)
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Notifications',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                        if (_isLoadingNotifications)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: LinearProgressIndicator(minHeight: 2),
-                          ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: _notifications.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'No new notifications',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: _notifications.length,
-                                  separatorBuilder: (context, index) =>
-                                      const Divider(height: 12),
-                                  itemBuilder: (context, index) {
-                                    final item = _notifications[index];
-                                    final subtitle =
-                                        _formatNotificationSubtitle(item);
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(
-                                        _formatNotificationTitle(item),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
+                          if (_isLoadingNotifications)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: LinearProgressIndicator(minHeight: 2),
+                            ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: _notifications.isEmpty
+                                ? Center(
+                                    child: Text(
+                                      'No new notifications',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _formatNotificationBody(item),
-                                            style: TextStyle(
-                                              color: Colors.grey[700],
-                                              fontSize: 12,
-                                            ),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    itemCount: _notifications.length,
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final item = _notifications[index];
+                                      final subtitle =
+                                          _formatNotificationSubtitle(item);
+                                      return ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(
+                                          _formatNotificationTitle(item),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
                                           ),
-                                          if (subtitle.isNotEmpty)
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
                                             Text(
-                                              subtitle,
+                                              _formatNotificationBody(item),
                                               style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 11,
+                                                color: Colors.grey[700],
+                                                fontSize: 12,
                                               ),
                                             ),
-                                        ],
-                                      ),
-                                      trailing: const Icon(
-                                        Icons.arrow_forward_ios,
-                                        size: 14,
-                                        color: Colors.grey,
-                                      ),
-                                      onTap: () => _openNotification(item),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
+                                            if (subtitle.isNotEmpty)
+                                              Text(
+                                                subtitle,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        trailing: const Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 14,
+                                          color: Colors.grey,
+                                        ),
+                                        onTap: () => _openNotification(item),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
                 // Calendar section
                 Expanded(
-                  flex: 4,
+                  flex: showNotifications ? 4 : 5,
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     padding: const EdgeInsets.all(8),
@@ -574,7 +576,7 @@ class _HomePageState extends State<HomePage> {
 
                 // Bottom half - Announcements
                 Expanded(
-                  flex: 3,
+                  flex: showNotifications ? 3 : 4,
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     padding: const EdgeInsets.all(16),
