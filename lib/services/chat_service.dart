@@ -323,4 +323,143 @@ class ChatService {
       'lastName': lastName,
     }, SetOptions(merge: true));
   }
+
+  Future<void> addGroupEvent(
+    String groupId,
+    String groupName,
+    String title,
+    String description,
+    DateTime date,
+  ) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('events')
+        .add({
+          'title': title,
+          'description': description,
+          'date': Timestamp.fromDate(date),
+          'createdAt': FieldValue.serverTimestamp(),
+          'createdBy': currentUser.email,
+          'groupId': groupId,
+          'groupName': groupName,
+        });
+  }
+
+  Future<List<Map<String, dynamic>>> getGroupEvents(String groupId) async {
+    final snapshot = await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('events')
+        .orderBy('date', descending: false)
+        .get();
+
+    return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+  }
+
+  Future<Map<String, dynamic>?> _latestGroupMessage(
+    String groupId,
+    String groupName,
+  ) async {
+    final snapshot = await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    final data = snapshot.docs.first.data();
+    return {
+      'type': 'group',
+      'groupId': groupId,
+      'groupName': groupName,
+      'text': data['text'] ?? '',
+      'imageUrl': data['imageUrl'],
+      'senderEmail': data['senderEmail'] ?? '',
+      'timestamp': data['timestamp'],
+    };
+  }
+
+  Future<Map<String, dynamic>?> _latestDirectMessage(
+    String threadId,
+    String otherEmail,
+  ) async {
+    final snapshot = await _firestore
+        .collection('directMessages')
+        .doc(threadId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+
+    final data = snapshot.docs.first.data();
+    return {
+      'type': 'dm',
+      'threadId': threadId,
+      'otherEmail': otherEmail,
+      'text': data['text'] ?? '',
+      'imageUrl': data['imageUrl'],
+      'senderEmail': data['senderEmail'] ?? '',
+      'timestamp': data['timestamp'],
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentNotifications(
+    List<Map<String, String>> groups,
+  ) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) {
+      return [];
+    }
+
+    final List<Map<String, dynamic>> items = [];
+
+    for (final group in groups) {
+      final groupId = group['id'] ?? '';
+      if (groupId.isEmpty) continue;
+      final groupName = group['name'] ?? 'Group';
+      final latest = await _latestGroupMessage(groupId, groupName);
+      if (latest != null) {
+        items.add(latest);
+      }
+    }
+
+    final threadSnapshot = await _firestore
+        .collection('directMessages')
+        .where('participants', arrayContains: currentUser.email)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    for (final doc in threadSnapshot.docs) {
+      final data = doc.data();
+      final participants = List<String>.from(data['participants'] ?? []);
+      final otherEmail = participants.firstWhere(
+        (email) => email != currentUser.email,
+        orElse: () => 'Unknown',
+      );
+      final latest = await _latestDirectMessage(doc.id, otherEmail);
+      if (latest != null) {
+        items.add(latest);
+      }
+    }
+
+    items.sort((a, b) {
+      final aTime = a['timestamp'] as Timestamp?;
+      final bTime = b['timestamp'] as Timestamp?;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
+
+    return items;
+  }
 }

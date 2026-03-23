@@ -30,6 +30,165 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   bool _isSending = false;
   final Map<String, String?> _profilePictureCache = {};
 
+  Future<void> _showAddEventDialog(String groupName) async {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+    TimeOfDay selectedTime = TimeOfDay.now();
+    bool isSaving = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Event'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Event title',
+                    hintText: 'e.g., Practice',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Date'),
+                  subtitle: Text(
+                    '${selectedDate.month}/${selectedDate.day}/${selectedDate.year}',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 365),
+                      ),
+                      lastDate: DateTime.now().add(
+                        const Duration(days: 365 * 5),
+                      ),
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Time'),
+                  subtitle: Text(selectedTime.format(context)),
+                  trailing: const Icon(Icons.access_time),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime,
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        selectedTime = picked;
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final title = titleController.text.trim();
+                      if (title.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter an event title'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() {
+                        isSaving = true;
+                      });
+
+                      final eventDateTime = DateTime(
+                        selectedDate.year,
+                        selectedDate.month,
+                        selectedDate.day,
+                        selectedTime.hour,
+                        selectedTime.minute,
+                      );
+
+                      try {
+                        await _chatService.addGroupEvent(
+                          widget.groupId,
+                          groupName,
+                          title,
+                          descriptionController.text.trim(),
+                          eventDateTime,
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Event added to calendar'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error adding event: $e')),
+                          );
+                        }
+                      } finally {
+                        if (context.mounted) {
+                          setDialogState(() {
+                            isSaving = false;
+                          });
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Save', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    titleController.dispose();
+    descriptionController.dispose();
+  }
+
   IconData _iconFromName(String name) {
     switch (name) {
       case 'sports':
@@ -415,6 +574,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             ? admins
             : (createdBy.isNotEmpty ? <String>[createdBy] : <String>[]);
         final isAdmin = effectiveAdmins.contains(currentUserEmailSafe);
+        final isOwner = createdBy == currentUserEmailSafe;
         final canSend = whoCanPost == 'all' || isAdmin;
         final brightness = ThemeData.estimateBrightnessForColor(themeColor);
         final onThemeColor = brightness == Brightness.dark
@@ -457,6 +617,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             ),
             iconTheme: IconThemeData(color: onThemeColor),
             actions: [
+              if (isOwner)
+                IconButton(
+                  icon: const Icon(Icons.event_note),
+                  tooltip: 'Manage calendar',
+                  onPressed: () => _showAddEventDialog(widget.groupName),
+                ),
               if (isAdmin)
                 IconButton(
                   icon: const Icon(Icons.settings),
@@ -565,6 +731,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                           ],
                         ),
                         actions: [
+                          if (isOwner)
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _showAddEventDialog(widget.groupName);
+                              },
+                              child: const Text('Manage Calendar'),
+                            ),
                           if (isAdmin)
                             TextButton(
                               onPressed: () {
