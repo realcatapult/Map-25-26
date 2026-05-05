@@ -209,16 +209,79 @@ class ChatService {
     String? whoCanPost,
     int? themeColor,
     String? themeIcon,
+    String? bannerUrl,
+    String? overview,
   }) async {
     final updates = <String, dynamic>{};
     if (isPublic != null) updates['isPublic'] = isPublic;
     if (whoCanPost != null) updates['whoCanPost'] = whoCanPost;
     if (themeColor != null) updates['themeColor'] = themeColor;
     if (themeIcon != null) updates['themeIcon'] = themeIcon;
+    if (bannerUrl != null) updates['bannerUrl'] = bannerUrl;
+    if (overview != null) updates['overview'] = overview;
 
     if (updates.isNotEmpty) {
       await _firestore.collection('groups').doc(groupId).update(updates);
     }
+  }
+
+  // Upload group banner image and return URL
+  Future<String> uploadGroupBanner(File imageFile, String groupId) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}_banner.jpg';
+    final ref = _storage.ref().child('group_banners/$groupId/$fileName');
+    await ref.putFile(imageFile);
+    return await ref.getDownloadURL();
+  }
+
+  // Stream of all public groups for Discover page
+  Stream<QuerySnapshot> getPublicGroups() {
+    return _firestore
+        .collection('groups')
+        .where('isPublic', isEqualTo: true)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  // Join a public group directly by ID (no join code needed)
+  Future<void> joinGroupById(String groupId) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+    if (!groupDoc.exists) throw Exception('Group not found');
+
+    final data = groupDoc.data()!;
+    if (!(data['isPublic'] as bool? ?? false)) {
+      throw Exception('This group is private');
+    }
+
+    final members = List<String>.from(data['members'] ?? []);
+    if (members.contains(currentUser.email)) {
+      throw Exception('You are already in this group');
+    }
+
+    await _firestore.collection('groups').doc(groupId).update({
+      'members': FieldValue.arrayUnion([currentUser.email]),
+    });
+  }
+
+  // Search public groups by name (client-side filter)
+  Future<List<QueryDocumentSnapshot>> searchPublicGroups(String query) async {
+    final snapshot = await _firestore
+        .collection('groups')
+        .where('isPublic', isEqualTo: true)
+        .get();
+
+    final lowerQuery = query.toLowerCase();
+    return snapshot.docs.where((doc) {
+      final data = doc.data();
+      final name = (data['name'] ?? '').toString().toLowerCase();
+      final overview = (data['overview'] ?? '').toString().toLowerCase();
+      return name.contains(lowerQuery) || overview.contains(lowerQuery);
+    }).toList();
   }
 
   // Update group admins

@@ -6,6 +6,7 @@ import 'package:login_ui/Pages/chat_list_page.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/Pages/settings_page.dart';
+import 'package:login_ui/Pages/search_page.dart';
 import 'package:login_ui/services/chat_service.dart';
 
 class _CalendarEvent {
@@ -286,9 +287,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   final List<Map<String, String>> _announcements = [
-    {'title': 'Practice Tomorrow', 'time': '2 hours ago', 'from': 'Coach'},
-    {'title': 'Game Schedule Posted', 'time': '5 hours ago', 'from': 'Captain'},
-    {'title': 'Team Meeting Friday', 'time': '1 day ago', 'from': 'Coach'},
+    {'title': 'Elections Tomorrow', 'time': '2 hours ago', 'from': 'President'},
+    {'title': 'Fundraising Event', 'time': '5 hours ago', 'from': 'Secretary'},
+    {'title': 'Meeting Friday', 'time': '1 day ago', 'from': 'President'},
   ];
 
   void _onItemTapped(int index) {
@@ -297,6 +298,14 @@ class _HomePageState extends State<HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const ChatListPage()),
+      );
+      return;
+    }
+    if (index == 3) {
+      // Navigate to Search page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SearchPage()),
       );
       return;
     }

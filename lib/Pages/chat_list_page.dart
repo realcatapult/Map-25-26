@@ -5,6 +5,8 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -18,11 +20,13 @@ class _ChatListPageState extends State<ChatListPage> {
   final TextEditingController _groupNameController = TextEditingController();
   final TextEditingController _membersController = TextEditingController();
   final TextEditingController _joinCodeController = TextEditingController();
+  final TextEditingController _overviewController = TextEditingController();
   bool _isCreating = false;
   bool _isPublic = true;
   String _whoCanPost = 'all';
   int _themeColor = Colors.black.value;
   String _themeIcon = 'group';
+  XFile? _bannerImageFile;
 
   IconData _iconFromName(String name) {
     switch (name) {
@@ -40,6 +44,7 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   void _showCreateGroupDialog() {
+    _bannerImageFile = null;
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -54,6 +59,62 @@ class _ChatListPageState extends State<ChatListPage> {
                   decoration: const InputDecoration(
                     labelText: 'Group Name',
                     hintText: 'e.g., Team Practice',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _overviewController,
+                  decoration: const InputDecoration(
+                    labelText: 'Club Overview',
+                    hintText: 'Brief description of your club...',
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                // Banner image picker
+                GestureDetector(
+                  onTap: () async {
+                    final picker = ImagePicker();
+                    final picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 80,
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        _bannerImageFile = picked;
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[400]!),
+                    ),
+                    child: _bannerImageFile != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(_bannerImageFile!.path),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate,
+                                  size: 32, color: Colors.grey[600]),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Add Banner Image',
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 12),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -186,7 +247,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             .toList();
 
                         try {
-                          await _chatService.createGroupChat(
+                          final groupId = await _chatService.createGroupChat(
                             _groupNameController.text,
                             members,
                             _isPublic,
@@ -194,10 +255,31 @@ class _ChatListPageState extends State<ChatListPage> {
                             _themeColor,
                             _themeIcon,
                           );
+
+                          // Upload banner if selected
+                          String? bannerUrl;
+                          if (_bannerImageFile != null) {
+                            bannerUrl = await _chatService.uploadGroupBanner(
+                              File(_bannerImageFile!.path),
+                              groupId,
+                            );
+                          }
+
+                          // Save overview and banner URL
+                          final overview = _overviewController.text.trim();
+                          if (overview.isNotEmpty || bannerUrl != null) {
+                            await _chatService.updateGroupSettings(
+                              groupId,
+                              overview: overview.isNotEmpty ? overview : null,
+                              bannerUrl: bannerUrl,
+                            );
+                          }
+
                           if (context.mounted) {
                             Navigator.pop(context);
                             _groupNameController.clear();
                             _membersController.clear();
+                            _overviewController.clear();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Group created!')),
                             );
@@ -503,6 +585,7 @@ class _ChatListPageState extends State<ChatListPage> {
     _groupNameController.dispose();
     _membersController.dispose();
     _joinCodeController.dispose();
+    _overviewController.dispose();
     super.dispose();
   }
 }
