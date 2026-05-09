@@ -101,9 +101,18 @@ class _HomePageState extends State<HomePage> {
 
     final items = await _chatService.getRecentNotifications(groups);
 
+    const demoNotification = {
+      'type': 'group',
+      'groupName': 'Community Service Club',
+      'senderEmail': 'organizer@demo.com',
+      'text': 'Who wants to go to the foodbank tomorrow?',
+      'groupId': '',
+      'groupName_display': 'Community Service Club',
+    };
+
     if (!mounted) return;
     setState(() {
-      _notifications = items;
+      _notifications = [demoNotification, ...items];
       _isLoadingNotifications = false;
     });
   }
@@ -149,7 +158,7 @@ class _HomePageState extends State<HomePage> {
 
     final groupId = item['groupId'] as String?;
     final groupName = item['groupName'] as String?;
-    if (groupId == null || groupName == null) return;
+    if (groupId == null || groupId.isEmpty || groupName == null) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -287,7 +296,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   final List<Map<String, String>> _announcements = [
-    {'title': 'Elections Tomorrow', 'time': '2 hours ago', 'from': 'President'},
+    {'title': 'Club Elections Tomorrow', 'time': '2 hours ago', 'from': 'President'},
     {'title': 'Fundraising Event', 'time': '5 hours ago', 'from': 'Secretary'},
     {'title': 'Meeting Friday', 'time': '1 day ago', 'from': 'President'},
   ];

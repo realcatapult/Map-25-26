@@ -12,6 +12,7 @@ class _DemoClub {
   final Color logoColor;
   final List<Color> bannerGradient;
   final int memberCount;
+  final String? bannerImage;
 
   const _DemoClub({
     required this.name,
@@ -20,6 +21,7 @@ class _DemoClub {
     required this.logoColor,
     required this.bannerGradient,
     required this.memberCount,
+    this.bannerImage,
   });
 }
 
@@ -32,6 +34,7 @@ const List<_DemoClub> _demoClubs = [
     logoColor: Color(0xFF1565C0),
     bannerGradient: [Color(0xFF1565C0), Color(0xFF42A5F5)],
     memberCount: 124,
+    bannerImage: 'lib/images/PhotoBanner.jpeg',
   ),
   _DemoClub(
     name: 'Coding Club',
@@ -41,6 +44,7 @@ const List<_DemoClub> _demoClubs = [
     logoColor: Color(0xFF2E7D32),
     bannerGradient: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
     memberCount: 89,
+    bannerImage: 'lib/images/codingclub.jpeg',
   ),
   _DemoClub(
     name: 'Chess Club',
@@ -50,6 +54,7 @@ const List<_DemoClub> _demoClubs = [
     logoColor: Color(0xFF6A1B9A),
     bannerGradient: [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
     memberCount: 57,
+    bannerImage: 'lib/images/chess.jpeg',
   ),
   _DemoClub(
     name: 'Hiking & Outdoors',
@@ -186,17 +191,24 @@ class _DemoClubCardState extends State<DemoClubCard> {
               ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Container(
-                  width: double.infinity,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: club.bannerGradient,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
+                child: club.bannerImage != null
+                    ? Image.asset(
+                        club.bannerImage!,
+                        width: double.infinity,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        width: double.infinity,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: club.bannerGradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ),
               ),
               // Club logo badge
               Positioned(
