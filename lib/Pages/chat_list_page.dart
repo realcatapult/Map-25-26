@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
+import 'package:login_ui/Pages/demo_group_chat_page.dart';
+import 'package:login_ui/Pages/admin_activity_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -382,6 +384,20 @@ class _ChatListPageState extends State<ChatListPage> {
       appBar: AppBar(
         backgroundColor: Colors.grey[900],
         title: const Text('Messages', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+            tooltip: 'Admin: Club Activity',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdminActivityPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _chatService.getDirectMessageThreads(),
@@ -405,30 +421,7 @@ class _ChatListPageState extends State<ChatListPage> {
               final dmDocs = dmSnapshot.data?.docs ?? [];
               final groupDocs = groupSnapshot.data?.docs ?? [];
 
-              if (dmDocs.isEmpty && groupDocs.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 80,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No messages yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Create a group or message someone!',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                );
-              }
+              // Always show list (demo group ensures it's never empty)
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -490,7 +483,8 @@ class _ChatListPageState extends State<ChatListPage> {
                     }),
                     const SizedBox(height: 8),
                   ],
-                  if (groupDocs.isNotEmpty) ...[
+                  // Always show Group Chats section (demo + real groups)
+                  ...[
                     Text(
                       'Group Chats',
                       style: TextStyle(
@@ -500,6 +494,37 @@ class _ChatListPageState extends State<ChatListPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    // Demo: App Development Club
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: Color(0xFF1A237E),
+                          child: Icon(Icons.code, color: Colors.white),
+                        ),
+                        title: const Text(
+                          'App Development Club',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '5 members',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const DemoGroupChatPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                     ...groupDocs.map((group) {
                       final groupData = group.data() as Map<String, dynamic>;
                       final groupName = groupData['name'] ?? 'Unnamed Group';

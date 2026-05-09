@@ -593,6 +593,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _iconFromName(themeIconName),
@@ -600,9 +601,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       size: 18,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      widget.groupName,
-                      style: TextStyle(color: onThemeColor, fontSize: 18),
+                    Flexible(
+                      child: Text(
+                        widget.groupName,
+                        style: TextStyle(color: onThemeColor, fontSize: 18),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
