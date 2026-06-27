@@ -26,7 +26,7 @@ class _ChatListPageState extends State<ChatListPage> {
   bool _isCreating = false;
   bool _isPublic = true;
   String _whoCanPost = 'all';
-  int _themeColor = Colors.black.value;
+  int _themeColor = Colors.black.toARGB32();
   String _themeIcon = 'group';
   XFile? _bannerImageFile;
 
@@ -182,11 +182,11 @@ class _ChatListPageState extends State<ChatListPage> {
                         Colors.grey,
                         Colors.orange,
                       ].map((color) {
-                        final isSelected = _themeColor == color.value;
+                        final isSelected = _themeColor == color.toARGB32();
                         return GestureDetector(
                           onTap: () {
                             setDialogState(() {
-                              _themeColor = color.value;
+                              _themeColor = color.toARGB32();
                             });
                           },
                           child: CircleAvatar(
@@ -532,7 +532,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         groupData['members'] ?? [],
                       );
                       final themeColorValue =
-                          groupData['themeColor'] ?? Colors.grey[800]!.value;
+                          groupData['themeColor'] ?? Colors.grey[800]!.toARGB32();
                       final themeIconName = groupData['themeIcon'] ?? 'group';
                       final themeColor = Color(themeColorValue);
                       final icon = _iconFromName(themeIconName);

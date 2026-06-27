@@ -175,7 +175,7 @@ class _DemoClubCardState extends State<DemoClubCard> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -222,7 +222,7 @@ class _DemoClubCardState extends State<DemoClubCard> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -357,7 +357,7 @@ class ClubCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -375,7 +375,7 @@ class ClubCard extends StatelessWidget {
                     width: double.infinity,
                     height: 120,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholderBanner(),
+                    errorBuilder: (_, _, _) => _placeholderBanner(),
                   )
                 : _placeholderBanner(),
           ),

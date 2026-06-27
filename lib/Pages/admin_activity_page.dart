@@ -355,7 +355,7 @@ class _SummaryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha: 0.07),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -406,7 +406,7 @@ class _ClubCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.07),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -420,7 +420,7 @@ class _ClubCard extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: club.color.withOpacity(0.15),
+                  backgroundColor: club.color.withValues(alpha: 0.15),
                   child: Icon(club.icon, color: club.color, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -447,10 +447,10 @@ class _ClubCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
+                    color: statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border:
-                        Border.all(color: statusColor.withOpacity(0.4), width: 1),
+                        Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -549,7 +549,7 @@ class _StatChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.07),
+          color: color.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -604,7 +604,7 @@ class _MiniBarChart extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: ratio == 0
                               ? Colors.grey[300]
-                              : color.withOpacity(0.4 + ratio * 0.6),
+                              : color.withValues(alpha: 0.4 + ratio * 0.6),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
