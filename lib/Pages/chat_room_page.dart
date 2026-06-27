@@ -215,7 +215,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
     bool isPublic = groupData['isPublic'] ?? true;
     String whoCanPost = groupData['whoCanPost'] ?? 'all';
-    int themeColor = groupData['themeColor'] ?? Colors.grey[900]!.value;
+    int themeColor = groupData['themeColor'] ?? Colors.grey[900]!.toARGB32();
     String themeIcon = groupData['themeIcon'] ?? 'group';
     final adminSet = {...admins};
     if (createdBy.isNotEmpty) {
@@ -279,11 +279,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         Colors.grey,
                         Colors.orange,
                       ].map((color) {
-                        final isSelected = themeColor == color.value;
+                        final isSelected = themeColor == color.toARGB32();
                         return GestureDetector(
                           onTap: () {
                             setDialogState(() {
-                              themeColor = color.value;
+                              themeColor = color.toARGB32();
                             });
                           },
                           child: CircleAvatar(
@@ -567,7 +567,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         final createdBy = groupData?['createdBy'] ?? '';
         final whoCanPost = groupData?['whoCanPost'] ?? 'all';
         final themeColorValue =
-            groupData?['themeColor'] ?? Colors.grey[900]!.value;
+            groupData?['themeColor'] ?? Colors.grey[900]!.toARGB32();
         final themeIconName = groupData?['themeIcon'] ?? 'group';
         final themeColor = Color(themeColorValue);
         final effectiveAdmins = admins.isNotEmpty
@@ -613,7 +613,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 Text(
                   '${members.length} members',
                   style: TextStyle(
-                    color: onThemeColor.withOpacity(0.8),
+                    color: onThemeColor.withValues(alpha: 0.8),
                     fontSize: 12,
                   ),
                 ),
