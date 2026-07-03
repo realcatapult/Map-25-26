@@ -50,16 +50,18 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
   @override
   Widget build(BuildContext context) {
     final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: colorScheme.primary,
         title: Text(
           widget.otherEmail,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: colorScheme.onPrimary),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: colorScheme.onPrimary),
       ),
       body: Column(
         children: [
@@ -79,7 +81,7 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
                   return Center(
                     child: Text(
                       'No messages yet. Say hello!',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
                   );
                 }
@@ -111,13 +113,19 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
                           maxWidth: MediaQuery.of(context).size.width * 0.7,
                         ),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.black : Colors.white,
+                          color: isMe
+                              ? colorScheme.primary
+                              : (isDark
+                                  ? colorScheme.surfaceContainerHigh
+                                  : colorScheme.surface),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           text,
                           style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black,
+                            color: isMe
+                                ? colorScheme.onPrimary
+                                : colorScheme.onSurface,
                             fontSize: 14,
                           ),
                         ),
@@ -130,9 +138,16 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey, width: 0.5)),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  width: 0.5,
+                ),
+              ),
             ),
             child: Row(
               children: [
@@ -141,26 +156,30 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
+                      hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[200],
+                      fillColor: isDark
+                          ? colorScheme.surfaceContainerHigh
+                          : colorScheme.surfaceContainerLow,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
                       ),
                     ),
+                    style: TextStyle(color: colorScheme.onSurface),
                     maxLines: null,
                     textCapitalization: TextCapitalization.sentences,
                   ),
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: Colors.black,
+                  backgroundColor: colorScheme.primary,
                   child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    icon: Icon(Icons.send, color: colorScheme.onPrimary, size: 20),
                     onPressed: _sendMessage,
                   ),
                 ),

@@ -379,14 +379,17 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Messages', style: TextStyle(color: Colors.white)),
+        backgroundColor: colorScheme.primary,
+        title: Text('Messages', style: TextStyle(color: colorScheme.onPrimary)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+            icon: Icon(Icons.admin_panel_settings, color: colorScheme.onPrimary),
             tooltip: 'Admin: Club Activity',
             onPressed: () {
               Navigator.push(
@@ -432,7 +435,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -455,17 +458,21 @@ class _ChatListPageState extends State<ChatListPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Colors.black,
-                            child: Icon(Icons.person, color: Colors.white),
+                          leading: CircleAvatar(
+                            backgroundColor: colorScheme.primary,
+                            child: Icon(Icons.person, color: colorScheme.onPrimary),
                           ),
                           title: Text(
                             other,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                          trailing: const Icon(
+                          trailing: Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           onTap: () {
                             Navigator.push(
@@ -490,7 +497,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -498,7 +505,9 @@ class _ChatListPageState extends State<ChatListPage> {
                     Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark
+                            ? colorScheme.surfaceContainerHigh
+                            : colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ListTile(
@@ -506,15 +515,25 @@ class _ChatListPageState extends State<ChatListPage> {
                           backgroundColor: Color(0xFF1A237E),
                           child: Icon(Icons.code, color: Colors.white),
                         ),
-                        title: const Text(
+                        title: Text(
                           'App Development Club',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         subtitle: Text(
                           '5 members',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -550,18 +569,22 @@ class _ChatListPageState extends State<ChatListPage> {
                           ),
                           title: Text(
                             groupName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
                           subtitle: Text(
                             '${members.length} members',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
-                          trailing: const Icon(
+                          trailing: Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                           onTap: () {
                             Navigator.push(
@@ -590,15 +613,15 @@ class _ChatListPageState extends State<ChatListPage> {
           FloatingActionButton(
             heroTag: 'join',
             onPressed: _showJoinGroupDialog,
-            backgroundColor: Colors.grey[800],
-            child: const Icon(Icons.login, color: Colors.white),
+            backgroundColor: colorScheme.secondary,
+            child: Icon(Icons.login, color: colorScheme.onSecondary),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
             heroTag: 'create',
             onPressed: _showCreateGroupDialog,
-            backgroundColor: Colors.black,
-            child: const Icon(Icons.add, color: Colors.white),
+            backgroundColor: colorScheme.primary,
+            child: Icon(Icons.add, color: colorScheme.onPrimary),
           ),
         ],
       ),

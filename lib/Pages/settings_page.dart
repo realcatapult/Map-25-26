@@ -134,9 +134,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text('Settings', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -276,26 +276,39 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 16),
 
                         // Email (read-only)
-                        TextField(
-                          enabled: false,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            hintText: currentUser?.email ?? '',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        Builder(builder: (context) {
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          return TextField(
+                            enabled: false,
+                            style: TextStyle(
+                              color: isDark ? Colors.black : Theme.of(context).colorScheme.onSurface,
                             ),
-                            filled: true,
-                            fillColor: Colors.grey[100],
-                          ),
-                        ),
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              hintText: currentUser?.email ?? '',
+                              hintStyle: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 16),
 
                         // First Name
                         TextField(
                           controller: _firstNameController,
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             labelText: 'First Name',
                             hintText: 'Enter your first name',
+                            hintStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -307,9 +320,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         // Last Name
                         TextField(
                           controller: _lastNameController,
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             labelText: 'Last Name',
                             hintText: 'Enter your last name',
+                            hintStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),

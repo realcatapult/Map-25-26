@@ -557,6 +557,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Widget build(BuildContext context) {
     final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
     final currentUserEmailSafe = currentUserEmail ?? '';
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return StreamBuilder<DocumentSnapshot>(
       stream: _chatService.watchGroup(widget.groupId),
@@ -582,7 +584,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             : Colors.black;
 
         return Scaffold(
-          backgroundColor: Colors.grey[300],
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             backgroundColor: themeColor,
             leading: IconButton(
@@ -798,7 +800,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       return Center(
                         child: Text(
                           'No messages yet. Start the conversation!',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
                         ),
                       );
                     }
@@ -833,7 +835,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                   builder: (context, snapshot) {
                                     return CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: Colors.grey[400],
+                                      backgroundColor: isDark
+                                          ? colorScheme.surfaceContainerHigh
+                                          : colorScheme.surfaceVariant,
                                       backgroundImage:
                                           snapshot.hasData &&
                                               snapshot.data != null
@@ -868,7 +872,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                       MediaQuery.of(context).size.width * 0.7,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isMe ? themeColor : Colors.white,
+                                  color: isMe
+                                      ? themeColor
+                                      : (isDark
+                                          ? colorScheme.surfaceContainerHigh
+                                          : colorScheme.surface),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Column(
@@ -879,7 +887,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                         senderEmail.split('@')[0],
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: Colors.grey[600],
+                                          color: colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -925,7 +933,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                         style: TextStyle(
                                           color: isMe
                                               ? onThemeColor
-                                              : Colors.black,
+                                              : colorScheme.onSurface,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -940,7 +948,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                   builder: (context, snapshot) {
                                     return CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: Colors.grey[800],
+                                      backgroundColor: colorScheme.primary,
                                       backgroundImage:
                                           snapshot.hasData &&
                                               snapshot.data != null
@@ -975,16 +983,24 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               // Message input
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? colorScheme.surfaceContainerHigh
+                      : colorScheme.surface,
                   border: Border(
-                    top: BorderSide(color: Colors.grey, width: 0.5),
+                    top: BorderSide(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                      width: 0.5,
+                    ),
                   ),
                 ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.image, color: Colors.grey),
+                      icon: Icon(
+                        Icons.image,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                       onPressed: _isSending || !canSend
                           ? null
                           : _showImageSourceDialog,
@@ -996,17 +1012,21 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                           hintText: canSend
                               ? 'Type a message...'
                               : 'Only admins can send messages',
+                          hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: Colors.grey[200],
+                          fillColor: isDark
+                              ? colorScheme.surfaceContainerHigh
+                              : colorScheme.surfaceContainerLow,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 10,
                           ),
                         ),
+                        style: TextStyle(color: colorScheme.onSurface),
                         maxLines: null,
                         textCapitalization: TextCapitalization.sentences,
                         enabled: !_isSending && canSend,

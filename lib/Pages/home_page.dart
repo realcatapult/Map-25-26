@@ -296,7 +296,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   final List<Map<String, String>> _announcements = [
-    {'title': 'Club Elections Tomorrow', 'time': '2 hours ago', 'from': 'President'},
+    {
+      'title': 'Club Elections Tomorrow',
+      'time': '2 hours ago',
+      'from': 'President',
+    },
     {'title': 'Fundraising Event', 'time': '5 hours ago', 'from': 'Secretary'},
     {'title': 'Meeting Friday', 'time': '1 day ago', 'from': 'President'},
   ];
@@ -334,9 +338,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text('GroupApp', style: TextStyle(color: Colors.white)),
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -667,10 +671,10 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.black,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),

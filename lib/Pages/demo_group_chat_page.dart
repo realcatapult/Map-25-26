@@ -134,11 +134,13 @@ class _DemoGroupChatPageState extends State<DemoGroupChatPage> {
   @override
   Widget build(BuildContext context) {
     final me = FirebaseAuth.instance.currentUser?.email ?? 'you@example.com';
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     const themeColor = Color(0xFF1A237E);
     const onThemeColor = Colors.white;
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: themeColor,
         leading: IconButton(
@@ -214,7 +216,11 @@ class _DemoGroupChatPageState extends State<DemoGroupChatPage> {
                             maxWidth: MediaQuery.of(context).size.width * 0.65,
                           ),
                           decoration: BoxDecoration(
-                            color: isMe ? themeColor : Colors.white,
+                            color: isMe
+                                ? themeColor
+                                : (isDark
+                                    ? colorScheme.surfaceContainerHigh
+                                    : colorScheme.surface),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -234,7 +240,9 @@ class _DemoGroupChatPageState extends State<DemoGroupChatPage> {
                               Text(
                                 msg.text,
                                 style: TextStyle(
-                                  color: isMe ? onThemeColor : Colors.black,
+                                  color: isMe
+                                      ? onThemeColor
+                                      : colorScheme.onSurface,
                                   fontSize: 14,
                                 ),
                               ),
@@ -274,10 +282,15 @@ class _DemoGroupChatPageState extends State<DemoGroupChatPage> {
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.surface,
               border: Border(
-                top: BorderSide(color: Colors.grey, width: 0.5),
+                top: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+                  width: 0.5,
+                ),
               ),
             ),
             child: Row(
@@ -287,17 +300,21 @@ class _DemoGroupChatPageState extends State<DemoGroupChatPage> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
+                      hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[200],
+                      fillColor: isDark
+                          ? colorScheme.surfaceContainerHigh
+                          : colorScheme.surfaceContainerLow,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
                       ),
                     ),
+                    style: TextStyle(color: colorScheme.onSurface),
                     maxLines: null,
                     textCapitalization: TextCapitalization.sentences,
                     onSubmitted: (_) => _sendMessage(),

@@ -5,7 +5,7 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 
 // ── Placeholder demo data ──────────────────────────────────────────────────
-class _DemoClub {
+class DemoClub {
   final String name;
   final String description;
   final IconData logoIcon;
@@ -14,7 +14,7 @@ class _DemoClub {
   final int memberCount;
   final String? bannerImage;
 
-  const _DemoClub({
+  const DemoClub({
     required this.name,
     required this.description,
     required this.logoIcon,
@@ -25,8 +25,8 @@ class _DemoClub {
   });
 }
 
-const List<_DemoClub> _demoClubs = [
-  _DemoClub(
+const List<DemoClub> demoClubs = [
+  DemoClub(
     name: 'Photography Club',
     description:
         'Capture moments and explore the art of photography with fellow enthusiasts. Weekly photo walks, editing workshops, and gallery showcases.',
@@ -36,7 +36,7 @@ const List<_DemoClub> _demoClubs = [
     memberCount: 124,
     bannerImage: 'lib/images/PhotoBanner.jpeg',
   ),
-  _DemoClub(
+  DemoClub(
     name: 'Coding Club',
     description:
         'Build projects, learn new technologies, and collaborate with passionate developers. Hackathons, code reviews, and mentorship sessions every week.',
@@ -46,7 +46,7 @@ const List<_DemoClub> _demoClubs = [
     memberCount: 89,
     bannerImage: 'lib/images/codingclub.jpeg',
   ),
-  _DemoClub(
+  DemoClub(
     name: 'Chess Club',
     description:
         'Sharpen your strategic thinking and compete in weekly tournaments. All skill levels welcome — beginners receive free coaching from experienced players.',
@@ -56,7 +56,7 @@ const List<_DemoClub> _demoClubs = [
     memberCount: 57,
     bannerImage: 'lib/images/chess.jpeg',
   ),
-  _DemoClub(
+  DemoClub(
     name: 'Hiking & Outdoors',
     description:
         'Explore scenic trails and connect with nature lovers. Weekend hikes, camping trips, and survival skill workshops held throughout the year.',
@@ -65,7 +65,7 @@ const List<_DemoClub> _demoClubs = [
     bannerGradient: [Color(0xFFE65100), Color(0xFFFF8A65)],
     memberCount: 203,
   ),
-  _DemoClub(
+  DemoClub(
     name: 'Art & Design Club',
     description:
         'Express your creativity through painting, sketching, and digital design. Monthly exhibitions, live critique sessions, and collaborative murals.',
@@ -73,6 +73,33 @@ const List<_DemoClub> _demoClubs = [
     logoColor: Color(0xFFC62828),
     bannerGradient: [Color(0xFFC62828), Color(0xFFEF9A9A)],
     memberCount: 76,
+  ),
+  DemoClub(
+    name: 'Music Lounge',
+    description:
+        'Jam with friends, explore new sounds, and share playlists. Live open mic nights and collaborative studio sessions every month.',
+    logoIcon: Icons.music_note,
+    logoColor: Color(0xFF8E24AA),
+    bannerGradient: [Color(0xFF8E24AA), Color(0xFFBA68C8)],
+    memberCount: 143,
+  ),
+  DemoClub(
+    name: 'Entrepreneurship Club',
+    description:
+        'Pitch ideas, build business plans, and network with aspiring founders. Weekly workshops on startups, fundraising, and product design.',
+    logoIcon: Icons.business,
+    logoColor: Color(0xFF37474F),
+    bannerGradient: [Color(0xFF37474F), Color(0xFF90A4AE)],
+    memberCount: 98,
+  ),
+  DemoClub(
+    name: 'Cooking Club',
+    description:
+        'Share recipes, host cook-alongs, and explore world cuisines together. Perfect for food lovers who want to cook, taste, and learn.',
+    logoIcon: Icons.restaurant,
+    logoColor: Color(0xFFEF6C00),
+    bannerGradient: [Color(0xFFEF6C00), Color(0xFFFFCC80)],
+    memberCount: 68,
   ),
 ];
 // ──────────────────────────────────────────────────────────────────────────
@@ -85,10 +112,13 @@ class DiscoverPage extends StatelessWidget {
     final chatService = ChatService();
 
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Discover Clubs', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: const Text(
+          'Discover Clubs',
+          style: TextStyle(color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -120,7 +150,7 @@ class DiscoverPage extends StatelessWidget {
                   ),
                 ),
               ),
-              ..._demoClubs.map((club) => DemoClubCard(club: club)),
+              ...demoClubs.map((club) => DemoClubCard(club: club)),
 
               // ── Live clubs from Firestore ──
               if (docs.isNotEmpty) ...[
@@ -155,7 +185,7 @@ class DiscoverPage extends StatelessWidget {
 
 // ── Demo Club Card ─────────────────────────────────────────────────────────
 class DemoClubCard extends StatefulWidget {
-  final _DemoClub club;
+  final DemoClub club;
   const DemoClubCard({super.key, required this.club});
 
   @override
@@ -171,8 +201,8 @@ class _DemoClubCardState extends State<DemoClubCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -189,8 +219,9 @@ class _DemoClubCardState extends State<DemoClubCard> {
             clipBehavior: Clip.none,
             children: [
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
                 child: club.bannerImage != null
                     ? Image.asset(
                         club.bannerImage!,
@@ -271,17 +302,22 @@ class _DemoClubCardState extends State<DemoClubCard> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      'Request sent to join ${club.name}!'),
+                                    'Request sent to join ${club.name}!',
+                                  ),
                                 ),
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                             ),
                             child: const Text(
                               'Request to Join',
                               style: TextStyle(
-                                  color: Colors.white, fontSize: 12),
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                   ],
@@ -304,16 +340,14 @@ class _DemoClubCardState extends State<DemoClubCard> {
                     const SizedBox(width: 4),
                     Text(
                       '${club.memberCount} members',
-                      style:
-                          TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     const SizedBox(width: 12),
                     Icon(Icons.lock_open, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       'Public',
-                      style:
-                          TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                   ],
                 ),
@@ -353,8 +387,8 @@ class ClubCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -424,8 +458,7 @@ class ClubCard extends StatelessWidget {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content:
-                                          Text('You joined $name!'),
+                                      content: Text('You joined $name!'),
                                     ),
                                   );
                                 }
@@ -438,7 +471,9 @@ class ClubCard extends StatelessWidget {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
                             ),
                             child: const Text(
                               'Join',
@@ -467,20 +502,14 @@ class ClubCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '$memberCount member${memberCount == 1 ? '' : 's'}',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     const SizedBox(width: 12),
                     Icon(Icons.lock_open, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       'Public',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                   ],
                 ),

@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -57,9 +57,13 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 50),
 
                 // App name
-                const Text(
+                Text(
                   'GroupApp',
-                  style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 45,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
 
                 // logo
