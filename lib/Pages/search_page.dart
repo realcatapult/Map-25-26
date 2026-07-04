@@ -118,40 +118,36 @@ class _SearchPageState extends State<SearchPage> {
         child: Column(
           children: [
             // Search bar
-            Builder(builder: (context) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return TextField(
-                controller: _searchController,
-                autofocus: false,
-                style: TextStyle(
-                  color: isDark ? Colors.black : Theme.of(context).colorScheme.onSurface,
+            TextField(
+              controller: _searchController,
+              autofocus: false,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search for clubs...',
+                hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Search for clubs...',
-                  hintStyle: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _query.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _search('');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _search('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                onChanged: _search,
-              );
-            }),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onChanged: _search,
+            ),
             const SizedBox(height: 16),
 
             // Discover Clubs button
@@ -302,21 +298,21 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Explore these clubs before you start typing.',
-                            style: TextStyle(color: Colors.black54),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                           ),
                           const SizedBox(height: 16),
                           ...demoClubs.map((club) => DemoClubCard(club: club)),
                           if (_liveClubs.isNotEmpty) ...[
-                            const Padding(
-                              padding: EdgeInsets.only(top: 8, bottom: 10),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 10),
                               child: Text(
                                 'All Clubs',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black54,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   letterSpacing: 0.5,
                                 ),
                               ),

@@ -408,6 +408,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     }
   }
 
+  String _formatTime(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour < 12 ? 'AM' : 'PM';
+    return '$h:$m $period';
+  }
+
   Future<String?> _getProfilePicture(String email) async {
     if (_profilePictureCache.containsKey(email)) {
       return _profilePictureCache[email];
@@ -818,6 +825,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         final imageUrl = message['imageUrl'] as String?;
                         final senderEmail = message['senderEmail'] ?? '';
                         final isMe = senderEmail == currentUserEmail;
+                        final timestamp =
+                            (message['timestamp'] as Timestamp?)?.toDate();
 
                         return Align(
                           alignment: isMe
@@ -837,7 +846,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                       radius: 16,
                                       backgroundColor: isDark
                                           ? colorScheme.surfaceContainerHigh
-                                          : colorScheme.surfaceVariant,
+                                          : colorScheme.surfaceContainerHighest,
                                       backgroundImage:
                                           snapshot.hasData &&
                                               snapshot.data != null
@@ -935,6 +944,20 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                               ? onThemeColor
                                               : colorScheme.onSurface,
                                           fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                    if (timestamp != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _formatTime(timestamp),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: isMe
+                                              ? onThemeColor.withValues(
+                                                  alpha: 0.7,
+                                                )
+                                              : colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ],

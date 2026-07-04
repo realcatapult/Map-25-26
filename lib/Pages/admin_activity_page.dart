@@ -353,7 +353,7 @@ class _SummaryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -377,7 +377,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: Colors.black54),
+              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -404,7 +404,7 @@ class _ClubCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(

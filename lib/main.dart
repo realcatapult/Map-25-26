@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'Pages/auth_page.dart';
 import 'Pages/home_page.dart';
@@ -20,10 +21,15 @@ class MyApp extends StatelessWidget {
     final primaryColor = const Color(0xFF1976D2);
     final secondaryColor = const Color(0xFF42A5F5);
 
+    final baseTextColor = isDark ? Colors.white : const Color(0xFF102A43);
+    final poppinsTextTheme = GoogleFonts.poppinsTextTheme(
+      ThemeData(brightness: brightness).textTheme,
+    ).apply(bodyColor: baseTextColor, displayColor: baseTextColor);
+
     return ThemeData(
       brightness: brightness,
       useMaterial3: true,
-      fontFamily: 'Segoe UI',
+      textTheme: poppinsTextTheme,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
         brightness: brightness,
@@ -64,11 +70,6 @@ class MyApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: primaryColor, width: 1.6),
         ),
-      ),
-      textTheme: ThemeData(brightness: brightness).textTheme.apply(
-        fontFamily: 'Segoe UI',
-        bodyColor: isDark ? Colors.white : const Color(0xFF102A43),
-        displayColor: isDark ? Colors.white : const Color(0xFF102A43),
       ),
     );
   }

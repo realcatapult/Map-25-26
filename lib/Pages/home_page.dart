@@ -371,7 +371,7 @@ class _HomePageState extends State<HomePage> {
                       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
@@ -396,7 +396,7 @@ class _HomePageState extends State<HomePage> {
                                     child: Text(
                                       'No new notifications',
                                       style: TextStyle(
-                                        color: Colors.grey[600],
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontStyle: FontStyle.italic,
                                       ),
                                     ),
@@ -425,7 +425,7 @@ class _HomePageState extends State<HomePage> {
                                             Text(
                                               _formatNotificationBody(item),
                                               style: TextStyle(
-                                                color: Colors.grey[700],
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -433,7 +433,7 @@ class _HomePageState extends State<HomePage> {
                                               Text(
                                                 subtitle,
                                                 style: TextStyle(
-                                                  color: Colors.grey[600],
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                                   fontSize: 11,
                                                 ),
                                               ),
@@ -461,7 +461,7 @@ class _HomePageState extends State<HomePage> {
                     margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: SingleChildScrollView(
@@ -503,16 +503,16 @@ class _HomePageState extends State<HomePage> {
                               });
                             },
                             calendarStyle: CalendarStyle(
-                              selectedDecoration: const BoxDecoration(
-                                color: Colors.black,
+                              selectedDecoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
                                 shape: BoxShape.circle,
                               ),
                               todayDecoration: BoxDecoration(
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.secondary,
                                 shape: BoxShape.circle,
                               ),
-                              markerDecoration: const BoxDecoration(
-                                color: Colors.blue,
+                              markerDecoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -527,7 +527,7 @@ class _HomePageState extends State<HomePage> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
+                              color: Theme.of(context).colorScheme.surfaceContainerLow,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Column(
@@ -556,14 +556,14 @@ class _HomePageState extends State<HomePage> {
                                             '• ${event.title}',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[800],
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           Text(
                                             event.groupName,
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.grey[600],
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                           if (event.description.isNotEmpty)
@@ -571,7 +571,7 @@ class _HomePageState extends State<HomePage> {
                                               event.description,
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[600],
+                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                               ),
                                             ),
                                         ],
@@ -583,7 +583,7 @@ class _HomePageState extends State<HomePage> {
                                     'No events scheduled',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -603,7 +603,7 @@ class _HomePageState extends State<HomePage> {
                     margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -626,7 +626,7 @@ class _HomePageState extends State<HomePage> {
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[100],
+                                  color: Theme.of(context).colorScheme.surfaceContainerLow,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -647,7 +647,7 @@ class _HomePageState extends State<HomePage> {
                                           Text(
                                             '${announcement['from']} • ${announcement['time']}',
                                             style: TextStyle(
-                                              color: Colors.grey[600],
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                                               fontSize: 12,
                                             ),
                                           ),

@@ -22,6 +22,13 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  String _formatTime(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour < 12 ? 'AM' : 'PM';
+    return '$h:$m $period';
+  }
+
   void _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -98,6 +105,8 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
                     final text = message['text'] ?? '';
                     final senderEmail = message['senderEmail'] ?? '';
                     final isMe = senderEmail == currentUserEmail;
+                    final timestamp =
+                        (message['timestamp'] as Timestamp?)?.toDate();
 
                     return Align(
                       alignment: isMe
@@ -120,14 +129,32 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
                                   : colorScheme.surface),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          text,
-                          style: TextStyle(
-                            color: isMe
-                                ? colorScheme.onPrimary
-                                : colorScheme.onSurface,
-                            fontSize: 14,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              text,
+                              style: TextStyle(
+                                color: isMe
+                                    ? colorScheme.onPrimary
+                                    : colorScheme.onSurface,
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (timestamp != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatTime(timestamp),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: isMe
+                                      ? colorScheme.onPrimary
+                                          .withValues(alpha: 0.7)
+                                      : colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     );

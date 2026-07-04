@@ -138,14 +138,14 @@ class DiscoverPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // ── Demo / placeholder clubs ──
-              const Padding(
-                padding: EdgeInsets.only(bottom: 10),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Text(
                   'Featured Clubs',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black54,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -154,14 +154,14 @@ class DiscoverPage extends StatelessWidget {
 
               // ── Live clubs from Firestore ──
               if (docs.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.only(top: 8, bottom: 10),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 10),
                   child: Text(
                     'All Clubs',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black54,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -249,7 +249,7 @@ class _DemoClubCardState extends State<DemoClubCard> {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
@@ -326,7 +326,7 @@ class _DemoClubCardState extends State<DemoClubCard> {
                 Text(
                   club.description,
                   style: TextStyle(
-                    color: Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                     height: 1.4,
                   ),

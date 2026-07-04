@@ -150,7 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -226,7 +226,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -259,7 +259,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -276,27 +276,24 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 16),
 
                         // Email (read-only)
-                        Builder(builder: (context) {
-                          final isDark = Theme.of(context).brightness == Brightness.dark;
-                          return TextField(
-                            enabled: false,
-                            style: TextStyle(
-                              color: isDark ? Colors.black : Theme.of(context).colorScheme.onSurface,
+                        TextField(
+                          enabled: false,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            hintText: currentUser?.email ?? '',
+                            hintStyle: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              hintText: currentUser?.email ?? '',
-                              hintStyle: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[100],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          );
-                        }),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                          ),
+                        ),
                         const SizedBox(height: 16),
 
                         // First Name

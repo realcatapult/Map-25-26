@@ -454,7 +454,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ListTile(
@@ -559,7 +559,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ListTile(
