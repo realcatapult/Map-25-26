@@ -44,7 +44,7 @@ class AiService {
   /// Get a free key at https://aistudio.google.com/apikey
   static const String _apiKey = geminiApiKey;
 
-  static const String _model = 'gemini-2.0-flash';
+  static const String _model = 'gemini-2.5-flash';
 
   static const String _systemPrompt =
       "You are the friendly support assistant for GroupApp, a mobile app for "
