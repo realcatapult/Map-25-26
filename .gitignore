@@ -1,3 +1,6 @@
+# Local secrets (API keys) — never commit
+lib/services/ai_secrets.dart
+
 # Miscellaneous
 *.class
 *.log
