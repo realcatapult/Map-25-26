@@ -7,6 +7,7 @@ import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/Pages/settings_page.dart';
 import 'package:login_ui/Pages/search_page.dart';
+import 'package:login_ui/components/interests_picker_dialog.dart';
 import 'package:login_ui/services/chat_service.dart';
 
 class _CalendarEvent {
@@ -46,11 +47,44 @@ class _HomePageState extends State<HomePage> {
   final Map<String, String> _groupNamesById = {};
   final Set<String> _enabledGroupIds = {};
   Set<String> _lastGroupIds = {};
+  bool _handledInterestsOnboarding = false;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowInterestsOnboarding();
+    });
+  }
+
+  Future<void> _maybeShowInterestsOnboarding() async {
+    if (_handledInterestsOnboarding || !mounted) return;
+
+    _handledInterestsOnboarding = true;
+
+    final shouldShow = await _chatService.shouldShowInterestsOnboarding();
+    if (!mounted || !shouldShow) return;
+
+    final existingInterests = await _chatService.getCurrentUserInterests();
+    if (!mounted) return;
+
+    final selected = await showInterestsPickerDialog(
+      context,
+      initialSelection: existingInterests,
+      isOnboarding: true,
+    );
+
+    if (selected == null || selected.isEmpty) return;
+
+    await _chatService.updateCurrentUserInterests(selected);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Preferences saved. Your recommendations are personalized.'),
+      ),
+    );
   }
 
   DateTime _normalizeDay(DateTime day) {

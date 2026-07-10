@@ -6,6 +6,7 @@ import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/Pages/demo_group_chat_page.dart';
 import 'package:login_ui/Pages/admin_activity_page.dart';
+import 'package:login_ui/data/interests_catalog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -23,6 +24,7 @@ class _ChatListPageState extends State<ChatListPage> {
   final TextEditingController _membersController = TextEditingController();
   final TextEditingController _joinCodeController = TextEditingController();
   final TextEditingController _overviewController = TextEditingController();
+  final TextEditingController _keywordsController = TextEditingController();
   bool _isCreating = false;
   bool _isPublic = true;
   String _whoCanPost = 'all';
@@ -47,6 +49,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   void _showCreateGroupDialog() {
     _bannerImageFile = null;
+    _keywordsController.clear();
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -71,6 +74,40 @@ class _ChatListPageState extends State<ChatListPage> {
                     hintText: 'Brief description of your club...',
                   ),
                   maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _keywordsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Club Keywords',
+                    hintText: 'Math, Chemistry, STEM, Law...',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: InterestsCatalog.all.take(14).map((keyword) {
+                    return ActionChip(
+                      label: Text(keyword),
+                      onPressed: () {
+                        final existing = _keywordsController.text
+                            .split(',')
+                            .map((value) => value.trim())
+                            .where((value) => value.isNotEmpty)
+                            .toList();
+                        if (existing.any(
+                          (value) => value.toLowerCase() == keyword.toLowerCase(),
+                        )) {
+                          return;
+                        }
+                        existing.add(keyword);
+                        setDialogState(() {
+                          _keywordsController.text = existing.join(', ');
+                        });
+                      },
+                    );
+                  }).toList(),
                 ),
                 const SizedBox(height: 16),
                 // Banner image picker
@@ -247,6 +284,12 @@ class _ChatListPageState extends State<ChatListPage> {
                             .map((e) => e.trim())
                             .where((e) => e.isNotEmpty)
                             .toList();
+                        final keywords = InterestsCatalog.normalize(
+                          _keywordsController.text
+                              .split(',')
+                              .map((value) => value.trim())
+                              .toList(),
+                        );
 
                         try {
                           final groupId = await _chatService.createGroupChat(
@@ -256,6 +299,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             _whoCanPost,
                             _themeColor,
                             _themeIcon,
+                            keywords,
                           );
 
                           // Upload banner if selected
@@ -282,6 +326,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             _groupNameController.clear();
                             _membersController.clear();
                             _overviewController.clear();
+                            _keywordsController.clear();
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Group created!')),
                             );
@@ -634,6 +679,7 @@ class _ChatListPageState extends State<ChatListPage> {
     _membersController.dispose();
     _joinCodeController.dispose();
     _overviewController.dispose();
+    _keywordsController.dispose();
     super.dispose();
   }
 }

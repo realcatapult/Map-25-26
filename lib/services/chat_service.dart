@@ -28,6 +28,7 @@ class ChatService {
     String whoCanPost,
     int themeColor,
     String themeIcon,
+    List<String>? keywords,
   ) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
@@ -51,6 +52,7 @@ class ChatService {
       'whoCanPost': whoCanPost,
       'themeColor': themeColor,
       'themeIcon': themeIcon,
+      'keywords': keywords ?? const <String>[],
     });
 
     return groupDoc.id;
@@ -211,6 +213,7 @@ class ChatService {
     String? themeIcon,
     String? bannerUrl,
     String? overview,
+    List<String>? keywords,
   }) async {
     final updates = <String, dynamic>{};
     if (isPublic != null) updates['isPublic'] = isPublic;
@@ -219,6 +222,7 @@ class ChatService {
     if (themeIcon != null) updates['themeIcon'] = themeIcon;
     if (bannerUrl != null) updates['bannerUrl'] = bannerUrl;
     if (overview != null) updates['overview'] = overview;
+    if (keywords != null) updates['keywords'] = keywords;
 
     if (updates.isNotEmpty) {
       await _firestore.collection('groups').doc(groupId).update(updates);
@@ -280,7 +284,11 @@ class ChatService {
       final data = doc.data();
       final name = (data['name'] ?? '').toString().toLowerCase();
       final overview = (data['overview'] ?? '').toString().toLowerCase();
-      return name.contains(lowerQuery) || overview.contains(lowerQuery);
+      final keywords = List<String>.from(data['keywords'] ?? const <String>[])
+          .map((value) => value.toLowerCase())
+          .toList();
+      final keywordMatch = keywords.any((keyword) => keyword.contains(lowerQuery));
+      return name.contains(lowerQuery) || overview.contains(lowerQuery) || keywordMatch;
     }).toList();
   }
 
@@ -384,6 +392,42 @@ class ChatService {
       'email': currentUser.email,
       'firstName': firstName,
       'lastName': lastName,
+    }, SetOptions(merge: true));
+  }
+
+  Future<List<String>> getCurrentUserInterests() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return const [];
+
+    final doc = await _firestore.collection('users').doc(currentUser.uid).get();
+    final data = doc.data();
+    if (data == null) return const [];
+
+    return List<String>.from(data['interests'] ?? const <String>[]);
+  }
+
+  Future<bool> shouldShowInterestsOnboarding() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return false;
+
+    final doc = await _firestore.collection('users').doc(currentUser.uid).get();
+    final data = doc.data();
+    if (data == null) return true;
+
+    final seen = data['interestsOnboardingSeen'] as bool? ?? false;
+    final interests = List<String>.from(data['interests'] ?? const <String>[]);
+    return !seen || interests.isEmpty;
+  }
+
+  Future<void> updateCurrentUserInterests(List<String> interests) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    await _firestore.collection('users').doc(currentUser.uid).set({
+      'email': currentUser.email,
+      'interests': interests,
+      'interestsOnboardingSeen': true,
+      'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 

@@ -15,8 +15,10 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final ChatService _chatService = ChatService();
   final TextEditingController _searchController = TextEditingController();
+
   List<dynamic> _results = [];
   List<QueryDocumentSnapshot> _liveClubs = [];
+  List<String> _userInterests = [];
   bool _isLoading = false;
   bool _isLoadingClubs = true;
   String _query = '';
@@ -24,7 +26,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _loadClubs();
+    _loadData();
   }
 
   @override
@@ -33,16 +35,22 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  Future<void> _loadClubs() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoadingClubs = true;
     });
 
-    final snapshot = await _chatService.getPublicGroups().first;
+    final publicGroupsFuture = _chatService.getPublicGroups().first;
+    final interestsFuture = _chatService.getCurrentUserInterests();
+
+    final snapshot = await publicGroupsFuture;
+    final interests = await interestsFuture;
+
     if (!mounted) return;
 
     setState(() {
       _liveClubs = snapshot.docs;
+      _userInterests = interests;
       _isLoadingClubs = false;
     });
   }
@@ -63,7 +71,13 @@ class _SearchPageState extends State<SearchPage> {
 
     final matchingDemoClubs = demoClubs.where((club) {
       final name = club.name.toLowerCase();
-      return name.contains(lowerQuery);
+      final description = club.description.toLowerCase();
+      final keywordHit = club.keywords.any(
+        (keyword) => keyword.toLowerCase().contains(lowerQuery),
+      );
+      return name.contains(lowerQuery) ||
+          description.contains(lowerQuery) ||
+          keywordHit;
     }).toList();
 
     final rankedDemoClubs = matchingDemoClubs.toList()
@@ -72,8 +86,9 @@ class _SearchPageState extends State<SearchPage> {
         final bName = b.name.toLowerCase();
         final aStartsWith = aName.startsWith(lowerQuery) ? 0 : 1;
         final bStartsWith = bName.startsWith(lowerQuery) ? 0 : 1;
-        if (aStartsWith != bStartsWith)
+        if (aStartsWith != bStartsWith) {
           return aStartsWith.compareTo(bStartsWith);
+        }
 
         final aExact = aName == lowerQuery ? 0 : 1;
         final bExact = bName == lowerQuery ? 0 : 1;
@@ -85,14 +100,18 @@ class _SearchPageState extends State<SearchPage> {
       });
 
     final rankedResults = <dynamic>[];
-    for (final club in rankedDemoClubs) {
-      rankedResults.add(club);
-    }
+    rankedResults.addAll(rankedDemoClubs);
 
     for (final doc in results) {
       final data = doc.data() as Map<String, dynamic>;
       final name = (data['name'] ?? '').toString().toLowerCase();
-      if (name.contains(lowerQuery)) {
+      final overview = (data['overview'] ?? '').toString().toLowerCase();
+      final keywords = List<String>.from(data['keywords'] ?? const <String>[])
+          .map((value) => value.toLowerCase())
+          .toList();
+      if (name.contains(lowerQuery) ||
+          overview.contains(lowerQuery) ||
+          keywords.any((keyword) => keyword.contains(lowerQuery))) {
         rankedResults.add(doc);
       }
     }
@@ -104,8 +123,73 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
+  List<_RankedClub> _buildRecommendedClubs() {
+    final ranked = <_RankedClub>[];
+
+    for (final club in demoClubs) {
+      final matchKeyword = _firstInterestKeywordMatch(_userInterests, club.keywords);
+      final score = _recommendationScore(
+        memberCount: club.memberCount,
+        matchedKeyword: matchKeyword,
+      );
+      ranked.add(
+        _RankedClub(
+          item: club,
+          matchedKeyword: matchKeyword,
+          score: score,
+        ),
+      );
+    }
+
+    for (final doc in _liveClubs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final keywords = List<String>.from(data['keywords'] ?? const <String>[]);
+      final matchKeyword = _firstInterestKeywordMatch(_userInterests, keywords);
+      final members = List<String>.from(data['members'] ?? const <String>[]);
+      final score = _recommendationScore(
+        memberCount: members.length,
+        matchedKeyword: matchKeyword,
+      );
+
+      ranked.add(
+        _RankedClub(
+          item: doc,
+          matchedKeyword: matchKeyword,
+          score: score,
+        ),
+      );
+    }
+
+    ranked.sort((a, b) => b.score.compareTo(a.score));
+    return ranked;
+  }
+
+  int _recommendationScore({
+    required int memberCount,
+    required String? matchedKeyword,
+  }) {
+    final keywordBonus = matchedKeyword == null ? 0 : 1000;
+    return keywordBonus + memberCount;
+  }
+
+  String? _firstInterestKeywordMatch(List<String> interests, List<String> keywords) {
+    if (interests.isEmpty || keywords.isEmpty) return null;
+
+    for (final interest in interests) {
+      for (final keyword in keywords) {
+        if (interest.toLowerCase() == keyword.toLowerCase()) {
+          return keyword;
+        }
+      }
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final recommended = _buildRecommendedClubs();
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -117,13 +201,10 @@ class _SearchPageState extends State<SearchPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Search bar
             TextField(
               controller: _searchController,
               autofocus: false,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Search for clubs...',
                 hintStyle: TextStyle(
@@ -149,8 +230,6 @@ class _SearchPageState extends State<SearchPage> {
               onChanged: _search,
             ),
             const SizedBox(height: 16),
-
-            // Discover Clubs button
             GestureDetector(
               onTap: () => Navigator.push(
                 context,
@@ -171,11 +250,7 @@ class _SearchPageState extends State<SearchPage> {
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.explore,
-                        color: Colors.white,
-                        size: 26,
-                      ),
+                      child: const Icon(Icons.explore, color: Colors.white, size: 26),
                     ),
                     const SizedBox(width: 14),
                     const Expanded(
@@ -193,27 +268,17 @@ class _SearchPageState extends State<SearchPage> {
                           SizedBox(height: 2),
                           Text(
                             'Browse all public clubs open to join',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white54,
-                      size: 16,
-                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 16),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Results area
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.only(top: 32),
@@ -226,18 +291,11 @@ class _SearchPageState extends State<SearchPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
+                            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
                             const SizedBox(height: 12),
                             Text(
                               'No clubs found for "$_query"',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 15,
-                              ),
+                              style: TextStyle(color: Colors.grey[600], fontSize: 15),
                             ),
                           ],
                         ),
@@ -248,35 +306,43 @@ class _SearchPageState extends State<SearchPage> {
                           final item = _results[index];
 
                           if (item is DemoClub) {
-                            return DemoClubCard(club: item);
+                            final matched = _firstInterestKeywordMatch(
+                              _userInterests,
+                              item.keywords,
+                            );
+                            return DemoClubCard(
+                              club: item,
+                              matchedKeyword: matched,
+                            );
                           }
 
                           final doc = item as QueryDocumentSnapshot;
                           final data = doc.data() as Map<String, dynamic>;
-                          final currentEmail =
-                              FirebaseAuth.instance.currentUser?.email ?? '';
-                          final members = List<String>.from(
-                            data['members'] ?? [],
-                          );
+                          final currentEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+                          final members = List<String>.from(data['members'] ?? []);
                           final isMember = members.contains(currentEmail);
+                          final matched = _firstInterestKeywordMatch(
+                            _userInterests,
+                            List<String>.from(data['keywords'] ?? const <String>[]),
+                          );
 
                           return GestureDetector(
                             onTap: isMember
                                 ? () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ChatRoomPage(
-                                        groupId: doc.id,
-                                        groupName:
-                                            (data['name'] ?? 'Club') as String,
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ChatRoomPage(
+                                          groupId: doc.id,
+                                          groupName: (data['name'] ?? 'Club') as String,
+                                        ),
                                       ),
-                                    ),
-                                  )
+                                    )
                                 : null,
                             child: ClubCard(
                               groupId: doc.id,
                               data: data,
                               chatService: _chatService,
+                              matchedKeyword: matched,
                             ),
                           );
                         },
@@ -292,40 +358,35 @@ class _SearchPageState extends State<SearchPage> {
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Text(
                               'Recommended clubs',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ),
                           Text(
-                            'Explore these clubs before you start typing.',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            _userInterests.isEmpty
+                                ? 'Pick interests in Settings to personalize this list.'
+                                : 'Clubs matching your interests appear first.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                           const SizedBox(height: 16),
-                          ...demoClubs.map((club) => DemoClubCard(club: club)),
-                          if (_liveClubs.isNotEmpty) ...[
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8, bottom: 10),
-                              child: Text(
-                                'All Clubs',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            ..._liveClubs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              return ClubCard(
-                                groupId: doc.id,
-                                data: data,
-                                chatService: _chatService,
+                          ...recommended.map((entry) {
+                            if (entry.item is DemoClub) {
+                              return DemoClubCard(
+                                club: entry.item as DemoClub,
+                                matchedKeyword: entry.matchedKeyword,
                               );
-                            }),
-                          ],
+                            }
+
+                            final doc = entry.item as QueryDocumentSnapshot;
+                            final data = doc.data() as Map<String, dynamic>;
+                            return ClubCard(
+                              groupId: doc.id,
+                              data: data,
+                              chatService: _chatService,
+                              matchedKeyword: entry.matchedKeyword,
+                            );
+                          }),
                         ],
                       ),
               ),
@@ -334,4 +395,16 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
+}
+
+class _RankedClub {
+  final dynamic item;
+  final String? matchedKeyword;
+  final int score;
+
+  const _RankedClub({
+    required this.item,
+    required this.matchedKeyword,
+    required this.score,
+  });
 }

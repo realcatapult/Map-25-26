@@ -6,6 +6,7 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
+import 'package:login_ui/data/interests_catalog.dart';
 import 'dart:io';
 
 class ChatRoomPage extends StatefulWidget {
@@ -217,6 +218,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     String whoCanPost = groupData['whoCanPost'] ?? 'all';
     int themeColor = groupData['themeColor'] ?? Colors.grey[900]!.toARGB32();
     String themeIcon = groupData['themeIcon'] ?? 'group';
+    final keywordsController = TextEditingController(
+      text: List<String>.from(groupData['keywords'] ?? const <String>[]).join(', '),
+    );
     final adminSet = {...admins};
     if (createdBy.isNotEmpty) {
       adminSet.add(createdBy);
@@ -323,6 +327,40 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   }).toList(),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                  controller: keywordsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Club keywords',
+                    hintText: 'Math, Chemistry, STEM, Law...',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: InterestsCatalog.all.take(18).map((keyword) {
+                    return ActionChip(
+                      label: Text(keyword),
+                      onPressed: () {
+                        final existing = keywordsController.text
+                            .split(',')
+                            .map((value) => value.trim())
+                            .where((value) => value.isNotEmpty)
+                            .toList();
+                        if (existing.any(
+                          (value) => value.toLowerCase() == keyword.toLowerCase(),
+                        )) {
+                          return;
+                        }
+                        setDialogState(() {
+                          existing.add(keyword);
+                          keywordsController.text = existing.join(', ');
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -364,12 +402,20 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             ),
             ElevatedButton(
               onPressed: () async {
+                final keywords = InterestsCatalog.normalize(
+                  keywordsController.text
+                      .split(',')
+                      .map((value) => value.trim())
+                      .toList(),
+                );
+
                 await _chatService.updateGroupSettings(
                   widget.groupId,
                   isPublic: isPublic,
                   whoCanPost: whoCanPost,
                   themeColor: themeColor,
                   themeIcon: themeIcon,
+                  keywords: keywords,
                 );
                 await _chatService.updateGroupAdmins(
                   widget.groupId,
@@ -386,6 +432,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         ),
       ),
     );
+
+    keywordsController.dispose();
   }
 
   Future<void> _openDirectMessage(String otherEmail) async {

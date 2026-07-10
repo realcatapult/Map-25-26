@@ -11,6 +11,7 @@ class DemoClub {
   final IconData logoIcon;
   final Color logoColor;
   final List<Color> bannerGradient;
+  final List<String> keywords;
   final int memberCount;
   final String? bannerImage;
 
@@ -20,6 +21,7 @@ class DemoClub {
     required this.logoIcon,
     required this.logoColor,
     required this.bannerGradient,
+    required this.keywords,
     required this.memberCount,
     this.bannerImage,
   });
@@ -33,6 +35,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.camera_alt,
     logoColor: Color(0xFF1565C0),
     bannerGradient: [Color(0xFF1565C0), Color(0xFF42A5F5)],
+    keywords: ['Photography', 'Art', 'Design', 'Culture'],
     memberCount: 124,
     bannerImage: 'lib/images/PhotoBanner.jpeg',
   ),
@@ -43,6 +46,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.code,
     logoColor: Color(0xFF2E7D32),
     bannerGradient: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+    keywords: ['Coding', 'STEM', 'AI', 'Engineering'],
     memberCount: 89,
     bannerImage: 'lib/images/codingclub.jpeg',
   ),
@@ -53,6 +57,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.extension,
     logoColor: Color(0xFF6A1B9A),
     bannerGradient: [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+    keywords: ['Chess', 'Math', 'Strategy'],
     memberCount: 57,
     bannerImage: 'lib/images/chess.jpeg',
   ),
@@ -63,6 +68,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.terrain,
     logoColor: Color(0xFFE65100),
     bannerGradient: [Color(0xFFE65100), Color(0xFFFF8A65)],
+    keywords: ['Outdoors', 'Environment', 'Health'],
     memberCount: 203,
   ),
   DemoClub(
@@ -72,6 +78,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.palette,
     logoColor: Color(0xFFC62828),
     bannerGradient: [Color(0xFFC62828), Color(0xFFEF9A9A)],
+    keywords: ['Art', 'Design', 'Culture'],
     memberCount: 76,
   ),
   DemoClub(
@@ -81,6 +88,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.music_note,
     logoColor: Color(0xFF8E24AA),
     bannerGradient: [Color(0xFF8E24AA), Color(0xFFBA68C8)],
+    keywords: ['Music', 'Culture', 'Performance'],
     memberCount: 143,
   ),
   DemoClub(
@@ -90,6 +98,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.business,
     logoColor: Color(0xFF37474F),
     bannerGradient: [Color(0xFF37474F), Color(0xFF90A4AE)],
+    keywords: ['Business', 'Entrepreneurship', 'Marketing', 'Finance'],
     memberCount: 98,
   ),
   DemoClub(
@@ -99,6 +108,7 @@ const List<DemoClub> demoClubs = [
     logoIcon: Icons.restaurant,
     logoColor: Color(0xFFEF6C00),
     bannerGradient: [Color(0xFFEF6C00), Color(0xFFFFCC80)],
+    keywords: ['Cooking', 'Culture', 'Health'],
     memberCount: 68,
   ),
 ];
@@ -186,7 +196,13 @@ class DiscoverPage extends StatelessWidget {
 // ── Demo Club Card ─────────────────────────────────────────────────────────
 class DemoClubCard extends StatefulWidget {
   final DemoClub club;
-  const DemoClubCard({super.key, required this.club});
+  final String? matchedKeyword;
+
+  const DemoClubCard({
+    super.key,
+    required this.club,
+    this.matchedKeyword,
+  });
 
   @override
   State<DemoClubCard> createState() => _DemoClubCardState();
@@ -262,6 +278,25 @@ class _DemoClubCardState extends State<DemoClubCard> {
                   child: Center(
                     child: Icon(club.logoIcon, color: club.logoColor, size: 32),
                   ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                right: 8,
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    if (widget.matchedKeyword != null)
+                      _KeywordPill(
+                        label: 'Recommended: ${widget.matchedKeyword}',
+                        emphasize: true,
+                      ),
+                    ...club.keywords.take(2).map(
+                      (keyword) => _KeywordPill(label: keyword),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -366,12 +401,14 @@ class ClubCard extends StatelessWidget {
   final String groupId;
   final Map<String, dynamic> data;
   final ChatService chatService;
+  final String? matchedKeyword;
 
   const ClubCard({
     super.key,
     required this.groupId,
     required this.data,
     required this.chatService,
+    this.matchedKeyword,
   });
 
   @override
@@ -381,6 +418,7 @@ class ClubCard extends StatelessWidget {
     final bannerUrl = data['bannerUrl'] as String?;
     final members = List<String>.from(data['members'] ?? []);
     final memberCount = members.length;
+    final keywords = List<String>.from(data['keywords'] ?? const <String>[]);
     final currentEmail = FirebaseAuth.instance.currentUser?.email ?? '';
     final isMember = members.contains(currentEmail);
 
@@ -413,9 +451,24 @@ class ClubCard extends StatelessWidget {
                   )
                 : _placeholderBanner(),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                if (matchedKeyword != null)
+                  _KeywordPill(
+                    label: 'Recommended: $matchedKeyword',
+                    emphasize: true,
+                  ),
+                ...keywords.take(3).map((keyword) => _KeywordPill(label: keyword)),
+              ],
+            ),
+          ),
           // Details
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -527,6 +580,43 @@ class ClubCard extends StatelessWidget {
       height: 120,
       color: Colors.grey[800],
       child: const Icon(Icons.group, size: 48, color: Colors.white54),
+    );
+  }
+}
+
+class _KeywordPill extends StatelessWidget {
+  final String label;
+  final bool emphasize;
+
+  const _KeywordPill({
+    required this.label,
+    this.emphasize = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: emphasize
+            ? colorScheme.primary.withValues(alpha: 0.16)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: emphasize
+              ? colorScheme.primary.withValues(alpha: 0.4)
+              : colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: emphasize ? colorScheme.primary : colorScheme.onSurfaceVariant,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

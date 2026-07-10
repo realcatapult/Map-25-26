@@ -4,6 +4,7 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/theme_service.dart';
 import 'package:login_ui/Pages/support_chat_page.dart';
+import 'package:login_ui/components/interests_picker_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -22,6 +23,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _lastNameController = TextEditingController();
 
   String? _profilePictureUrl;
+  List<String> _interests = [];
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -43,8 +45,44 @@ class _SettingsPageState extends State<SettingsPage> {
         _profilePictureUrl = profilePic;
         _firstNameController.text = userData?['firstName'] ?? '';
         _lastNameController.text = userData?['lastName'] ?? '';
+        _interests = List<String>.from(userData?['interests'] ?? const <String>[]);
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _editInterests() async {
+    final selected = await showInterestsPickerDialog(
+      context,
+      initialSelection: _interests,
+    );
+
+    if (selected == null || selected.isEmpty) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _chatService.updateCurrentUserInterests(selected);
+
+      if (!mounted) return;
+      setState(() {
+        _interests = selected;
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Interests updated!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating interests: $e')),
+      );
     }
   }
 
@@ -273,6 +311,78 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                             );
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // User Info Section
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.tune,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Club Preferences',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Choose fields you are interested in so recommended clubs match your vibe.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _interests.isEmpty
+                              ? [
+                                  Chip(
+                                    label: const Text('No interests selected yet'),
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                  ),
+                                ]
+                              : _interests
+                                    .map(
+                                      (interest) => Chip(
+                                        label: Text(interest),
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.12),
+                                      ),
+                                    )
+                                    .toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: OutlinedButton.icon(
+                            onPressed: _isSaving ? null : _editInterests,
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Edit Preferences'),
+                          ),
                         ),
                       ],
                     ),
