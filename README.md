@@ -1,299 +1,141 @@
-# Flutter Login & Home App Documentation
+# GroupApp (Flutter + Firebase)
 
-## Project Overview
-This is a Flutter application with Firebase Authentication, featuring a login/registration system and a home page with calendar and announcements functionality.
+GroupApp is a Flutter app for student groups/clubs with authentication, group chat, direct messages, calendar events, club discovery, personalized recommendations, and AI support chat.
 
----
+## Current Status
 
-## Project Structure
+This README reflects the current implementation in this repository.
 
-```
-lib/
-├── main.dart                 # App entry point with Firebase initialization
-├── firebase_options.dart     # Firebase configuration (auto-generated)
-├── Pages/
-│   ├── auth_page.dart       # Toggles between login and register pages
-│   ├── login_page.dart      # Email login page
-│   ├── register_page.dart   # Email registration page
-│   └── home_page.dart       # Main home page with calendar and announcements
-├── services/
-│   └── auth_service.dart    # Firebase authentication service
-└── components/
-    ├── my_button.dart       # Custom button component
-    ├── my_textfield.dart    # Custom text field component
-    └── square_tile.dart     # Social login tile component
-```
+## Core Features
 
----
+- Firebase email/password authentication (login + register)
+- Auth-gated routing (`AuthPage` when signed out, `HomePage` when signed in)
+- Group chat system
+- Create group with:
+  - public/private mode
+  - who-can-post setting (all/admins)
+  - theme color + icon
+  - overview text
+  - banner image
+  - keyword tags
+- Join groups by 6-character join code
+- Join public groups directly from Discover/Search
+- Admin controls in group settings:
+  - edit visibility/posting permissions/theme
+  - manage admins
+  - edit group keywords
+- Direct messages between users
+- Group calendar events + home calendar aggregation/filtering
+- Notifications panel on Home (latest group + DM activity)
+- Discover page with demo clubs + live Firestore clubs
+- Search page with keyword-aware matching and ranking
+- Recommendation system:
+  - user interest preferences are stored
+  - clubs with matching keywords are ranked first
+  - cards display why recommended (matched keyword chip)
+- User Settings:
+  - profile picture upload
+  - first/last name editing
+  - dark mode toggle
+  - AI support entry
+  - edit interest preferences
+- First-run interests onboarding popup after sign-in
+- AI support chat service with 3 backend modes:
+  - direct Gemini API (demo)
+  - Cloud Function (`supportChat`)
+  - local scripted fallback
 
-## Dependencies
+## Interests and Club Keywords
 
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.8
-  firebase_core: ^3.8.1        # Firebase core functionality
-  firebase_auth: ^5.3.3        # Firebase authentication
-  table_calendar: ^3.1.2       # Calendar widget
-```
+- User interests are saved in `users/{uid}`:
+  - `interests: List<String>`
+  - `interestsOnboardingSeen: bool`
+- Group keywords are saved in `groups/{groupId}`:
+  - `keywords: List<String>`
+- Search and recommendations use these fields to personalize ordering.
 
----
+## Key Files
 
-## Features & Components
+- `lib/main.dart` - app bootstrap, Firebase init, auth-state routing
+- `lib/Pages/home_page.dart` - home dashboard + onboarding trigger
+- `lib/Pages/chat_list_page.dart` - group list + create/join dialogs
+- `lib/Pages/chat_room_page.dart` - group chat + group settings/admin controls
+- `lib/Pages/search_page.dart` - keyword-aware search + personalized recommendations
+- `lib/Pages/discover_page.dart` - discover cards and reusable `ClubCard`
+- `lib/Pages/settings_page.dart` - profile/settings/preferences editor
+- `lib/components/interests_picker_dialog.dart` - onboarding/preferences popup UI
+- `lib/data/interests_catalog.dart` - canonical interest list
+- `lib/services/chat_service.dart` - Firestore/Storage group, DM, profile, preference APIs
+- `lib/services/auth_service.dart` - authentication service
+- `lib/services/ai_service.dart` - AI response logic and backend switching
 
-### 1. Authentication System
+## Dependencies (from `pubspec.yaml`)
 
-#### **AuthService** (`lib/services/auth_service.dart`)
-Handles all Firebase authentication operations.
+- `firebase_core`
+- `firebase_auth`
+- `cloud_firestore`
+- `firebase_storage`
+- `cloud_functions`
+- `table_calendar`
+- `image_picker`
+- `cached_network_image`
+- `google_fonts`
+- `http`
 
-**Methods:**
-- `signInWithEmailPassword(String email, String password)` - Signs in existing users
-- `signUpWithEmailPassword(String email, String password)` - Registers new users
-- `signOut()` - Signs out current user
+## Setup
 
-**Error Handling:**
-- Catches Firebase exceptions and returns user-friendly error messages
-- Errors are displayed via SnackBar notifications
+1. Install dependencies:
 
-#### **Login Page** (`lib/Pages/login_page.dart`)
-- Email and password input fields
-- Sign-in button that authenticates with Firebase
-- Link to navigate to registration page
-- Error handling with SnackBar messages
-- Social login placeholders (Google, Apple)
-
-#### **Register Page** (`lib/Pages/register_page.dart`)
-- Email, password, and confirm password fields
-- Password matching validation
-- Sign-up button that creates new Firebase accounts
-- Link to navigate back to login page
-- Error handling with SnackBar messages
-
-#### **Auth Page** (`lib/Pages/auth_page.dart`)
-- Wrapper component that toggles between login and register pages
-- Manages navigation state between the two screens
-
----
-
-### 2. Home Page (`lib/Pages/home_page.dart`)
-
-The main screen after successful authentication, featuring:
-
-#### **Calendar Section** (Top Half)
-- Interactive calendar showing current month
-- Today's date highlighted in grey
-- Selected date highlighted in black
-- Blue dot markers indicate days with events
-- Event display box below calendar showing:
-  - Selected date
-  - Events scheduled for that day
-  - "No events scheduled" message for empty days
-
-**Demo Event:**
-- Today's date has: "Practice at 6:30PM - 9PM, GYM"
-
-#### **Announcements Section** (Bottom Half)
-- Displays team announcements from coaches/captains
-- Shows announcement title, sender, and timestamp
-- Scrollable list view
-
-**Demo Announcements:**
-1. "Practice Tomorrow" - Coach, 2 hours ago
-2. "Game Schedule Posted" - Captain, 5 hours ago
-3. "Team Meeting Friday" - Coach, 1 day ago
-
-#### **Bottom Navigation Bar**
-Five navigation icons (Instagram-style):
-1. **Home** - Home icon
-2. **Chat** - Chat bubble icon
-3. **Calendar** - Calendar icon
-4. **Search** - Search icon
-5. **Settings** - Settings gear icon
-
-**Features:**
-- Logout button in app bar
-- Consistent grey background design matching login page
-- White card containers for calendar and announcements
-- Responsive layout with proper spacing
-
----
-
-### 3. Reusable Components
-
-#### **MyTextField** (`lib/components/my_textfield.dart`)
-Custom text input field with consistent styling.
-
-**Properties:**
-- `controller` - TextEditingController for managing input
-- `hintText` - Placeholder text
-- `obscureText` - Boolean for password fields
-- Grey background with white border
-- Auto-suggestions enabled for non-password fields
-
-#### **MyButton** (`lib/components/my_button.dart`)
-Custom button with app styling.
-
-**Properties:**
-- `onTap` - Callback function for button press
-- Black background with white text
-- Rounded corners (8px border radius)
-
-#### **SquareTile** (`lib/components/square_tile.dart`)
-Social login button component.
-
-**Properties:**
-- `imagePath` - Path to social provider logo
-
----
-
-## Firebase Configuration
-
-### Initialization (`lib/main.dart`)
-```dart
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const MyApp());
-}
+```bash
+flutter pub get
 ```
 
-### Auth State Management
-The app uses `StreamBuilder` to listen to Firebase auth state changes:
-- **Logged in** → Shows HomePage
-- **Logged out** → Shows AuthPage (login/register)
-- **Loading** → Shows CircularProgressIndicator
+2. Configure Firebase (already scaffolded in repo):
+- Android: `android/app/google-services.json`
+- iOS/macOS: `GoogleService-Info.plist`
+- Generated options: `lib/firebase_options.dart`
 
----
+3. Run:
 
-## Color Scheme & Design
+```bash
+flutter run
+```
 
-**Consistent Design Elements:**
-- **Background:** `Colors.grey[300]`
-- **Cards/Containers:** White (`Colors.white`)
-- **App Bar:** `Colors.grey[900]` with white text
-- **Primary Action:** Black buttons with white text
-- **Selected Items:** Black highlights
-- **Today Marker:** Grey circle
-- **Event Markers:** Blue dots
-- **Text Colors:** Grey shades for secondary text
+## AI Key Setup (Direct Gemini Demo Mode)
 
-**Border Radius:** 8px for all containers and buttons
+If `AiService.backend` is set to direct Gemini mode, create:
 
----
+- `lib/services/ai_secrets.dart`
 
-## How to Add Events
-
-To add events to the calendar, modify the `initState()` method in `home_page.dart`:
+With:
 
 ```dart
-@override
-void initState() {
-  super.initState();
-  _selectedDay = _focusedDay;
-
-  // Add events for specific dates
-  final today = DateTime.utc(
-    _focusedDay.year,
-    _focusedDay.month,
-    _focusedDay.day,
-  );
-  _events[today] = ['Practice at 6:30PM - 9PM, GYM'];
-  
-  // Add more events
-  final tomorrow = today.add(Duration(days: 1));
-  _events[tomorrow] = ['Game Day - 3PM', 'Team Dinner - 7PM'];
-}
+const String geminiApiKey = 'YOUR_KEY_HERE';
 ```
 
----
+Notes:
+- `lib/services/ai_secrets.dart` is gitignored.
+- `lib/services/ai_secrets.example.dart` is the template.
 
-## Authentication Flow
+## Data Notes
 
-1. User opens app
-2. `main.dart` checks Firebase auth state
-3. **If not authenticated:**
-   - Show AuthPage (defaults to LoginPage)
-   - User can toggle to RegisterPage
-   - User enters credentials
-   - Firebase validates and creates/authenticates user
-4. **If authenticated:**
-   - Show HomePage with calendar and announcements
-   - User can logout via app bar button
-5. On logout, automatically returns to LoginPage
+- Firestore collections used:
+  - `users`
+  - `groups`
+  - `directMessages`
+- Group subcollections:
+  - `messages`
+  - `events`
+- Storage paths used:
+  - `profile_pictures/`
+  - `group_banners/`
+  - `chat_images/`
 
----
+## Known Development Notes
 
-## Performance Notes
+- After major widget refactors, prefer full restart over hot reload if emulator shows stale widget lookup errors.
+- Some UI behavior is demo-seeded (for example demo clubs and example notifications).
 
-### Text Input Optimization
-The text fields include:
-- `enableSuggestions` - Optimized based on field type
-- `autocorrect` - Disabled for password fields
+## Last Updated
 
-**Note:** Some text input delay is normal in debug mode. For better performance:
-- Run in release mode: `flutter run --release`
-- Test on physical devices rather than emulators
-- Ensure adequate emulator resources (RAM/CPU)
-
----
-
-## Future Enhancements
-
-Potential features to implement:
-- [ ] Connect announcements to Firebase Firestore
-- [ ] Implement actual chat functionality
-- [ ] Add calendar event creation/editing
-- [ ] Implement search functionality
-- [ ] Add user settings page
-- [ ] Add profile pictures
-- [ ] Push notifications for new announcements
-- [ ] Social authentication (Google, Apple)
-
----
-
-## File Summary
-
-| File | Purpose | Key Features |
-|------|---------|--------------|
-| `main.dart` | App entry point | Firebase init, auth state management |
-| `auth_service.dart` | Authentication logic | Sign in, sign up, sign out methods |
-| `login_page.dart` | Login UI | Email/password login form |
-| `register_page.dart` | Registration UI | Email/password signup with validation |
-| `auth_page.dart` | Auth navigation | Toggles between login/register |
-| `home_page.dart` | Main app screen | Calendar, events, announcements, nav bar |
-| `my_textfield.dart` | Text input component | Styled text fields |
-| `my_button.dart` | Button component | Styled action buttons |
-
----
-
-## Setup Instructions
-
-1. **Install Dependencies:**
-   ```bash
-   flutter pub get
-   ```
-
-2. **Firebase Setup:**
-   - Ensure `google-services.json` (Android) is in `android/app/`
-   - Ensure `GoogleService-Info.plist` (iOS) is in `ios/Runner/`
-   - Firebase config is in `firebase_options.dart`
-
-3. **Run the App:**
-   ```bash
-   flutter run
-   ```
-
-4. **Build for Release:**
-   ```bash
-   flutter build apk          # Android
-   flutter build ios          # iOS
-   ```
-
----
-
-**Last Updated:** January 13, 2026
-**Flutter Version:** Compatible with Flutter 3.10+
-**Firebase:** Using FlutterFire packages
+2026-07-10
