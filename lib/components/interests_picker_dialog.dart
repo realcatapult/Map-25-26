@@ -70,13 +70,18 @@ Future<List<String>?> showInterestsPickerDialog(
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          MediaQuery.of(context).size.height * 0.8,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
@@ -152,95 +157,92 @@ Future<List<String>?> showInterestsPickerDialog(
                             );
                           }).toList(),
                         ),
-                        const SizedBox(height: 14),
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 280),
-                          child: SingleChildScrollView(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: InterestsCatalog.all
-                                  .where((interest) =>
-                                      !featuredInterests.contains(interest))
-                                  .map((interest) {
-                                final isSelected = selected.contains(interest);
-                                return ChoiceChip(
-                                  label: Text(
-                                    interest,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? const Color(0xFF001219)
-                                          : Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  selected: isSelected,
-                                  backgroundColor: const Color(0xFF1A3550),
-                                  selectedColor: const Color(0xFF8BFFB0),
-                                  side: BorderSide(
-                                    color: isSelected
-                                        ? const Color(0xFF8BFFB0)
-                                        : Colors.white.withValues(alpha: 0.55),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  onSelected: (nextValue) {
-                                    setDialogState(() {
-                                      if (nextValue) {
-                                        selected.add(interest);
-                                      } else {
-                                        selected.remove(interest);
-                                      }
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${selected.length} selected',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (!isOnboarding)
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(
-                                  'Cancel',
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: InterestsCatalog.all
+                                .where((interest) =>
+                                    !featuredInterests.contains(interest))
+                                .map((interest) {
+                              final isSelected = selected.contains(interest);
+                              return ChoiceChip(
+                                label: Text(
+                                  interest,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.85),
+                                    color: isSelected
+                                        ? const Color(0xFF001219)
+                                        : Colors.white,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                                selected: isSelected,
+                                backgroundColor: const Color(0xFF1A3550),
+                                selectedColor: const Color(0xFF8BFFB0),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? const Color(0xFF8BFFB0)
+                                      : Colors.white.withValues(alpha: 0.55),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                onSelected: (nextValue) {
+                                  setDialogState(() {
+                                    if (nextValue) {
+                                      selected.add(interest);
+                                    } else {
+                                      selected.remove(interest);
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${selected.length} selected',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ElevatedButton.icon(
-                              onPressed: selected.isEmpty
-                                  ? null
-                                  : () => Navigator.pop(
-                                        context,
-                                        selected.toList()..sort(),
-                                      ),
-                              icon: const Icon(Icons.check),
-                              label: Text(
-                                isOnboarding ? 'Save & Continue' : 'Save',
+                              if (!isOnboarding)
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.85),
+                                    ),
+                                  ),
+                                ),
+                              ElevatedButton.icon(
+                                onPressed: selected.isEmpty
+                                    ? null
+                                    : () => Navigator.pop(
+                                          context,
+                                          selected.toList()..sort(),
+                                        ),
+                                icon: const Icon(Icons.check),
+                                label: Text(
+                                  isOnboarding ? 'Save & Continue' : 'Save',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0xFF0B3D2E),
+                                  disabledBackgroundColor: Colors.white24,
+                                  disabledForegroundColor: Colors.white60,
+                                ),
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF0B3D2E),
-                                disabledBackgroundColor: Colors.white24,
-                                disabledForegroundColor: Colors.white60,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -251,32 +253,4 @@ Future<List<String>?> showInterestsPickerDialog(
       ),
     ),
   );
-}
-
-// Backward-compat shim for hot-reload sessions that may still look up this
-// widget type from the previous implementation.
-class _FloatingWordChip extends StatelessWidget {
-  final String label;
-
-  const _FloatingWordChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      selected: false,
-      onSelected: (_) {},
-      backgroundColor: const Color(0xFF1A3550),
-      side: BorderSide(color: Colors.white.withValues(alpha: 0.55)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(999),
-      ),
-    );
-  }
 }

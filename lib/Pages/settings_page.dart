@@ -57,17 +57,18 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (selected == null || selected.isEmpty) return;
+    final chosen = selected;
 
     setState(() {
       _isSaving = true;
     });
 
     try {
-      await _chatService.updateCurrentUserInterests(selected);
+      await _chatService.updateCurrentUserInterests(chosen);
 
       if (!mounted) return;
       setState(() {
-        _interests = selected;
+        _interests = chosen;
         _isSaving = false;
       });
 
