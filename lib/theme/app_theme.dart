@@ -1,0 +1,340 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+
+/// Blue-glass design tokens: the original blue palette + glassmorphism.
+class AppColors {
+  // Brand blues (unchanged from the original theme).
+  static const Color primary = Color(0xFF1976D2);
+  static const Color secondary = Color(0xFF42A5F5);
+  static const Color deepBlue = Color(0xFF0D47A1);
+
+  // Kept for widgets that referenced accents; mapped onto the blue family so
+  // "glow" highlights read as blue rather than cyan/neon.
+  static const Color cyan = Color(0xFF42A5F5);
+  static const Color teal = Color(0xFF64B5F6);
+  static const Color green = Color(0xFF90CAF9);
+
+  // Base surfaces (dark) — the original navy tones.
+  static const Color bg = Color(0xFF0F172A); // scaffold background
+  static const Color surface = Color(0xFF1E293B); // card / elevated panel
+  static const Color surfaceHigh = Color(0xFF243447); // higher elevation
+
+  // Light-mode base (original).
+  static const Color bgLight = Color(0xFFF7FAFC);
+  static const Color surfaceLight = Color(0xFFFFFFFF);
+
+  static const Color textDark = Color(0xFFFFFFFF);
+  static const Color textMutedDark = Color(0xFF9FB3C8);
+  static const Color textLight = Color(0xFF102A43);
+  static const Color textMutedLight = Color(0xFF5B7089);
+
+  /// Signature diagonal brand gradient (all blue).
+  static const List<Color> brandGradient = [
+    Color(0xFF0D47A1),
+    Color(0xFF1976D2),
+    Color(0xFF42A5F5),
+  ];
+
+  /// Accent gradient used on buttons / highlights (blue).
+  static const List<Color> accentGradient = [primary, secondary];
+}
+
+/// A full-screen animated-looking gradient backdrop with soft neon glows.
+/// Wrap a Scaffold body (or use as Scaffold background) to get the vibe.
+class NeonBackground extends StatelessWidget {
+  final Widget child;
+  const NeonBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isDark) {
+      return Container(color: AppColors.bgLight, child: child);
+    }
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF070B14), Color(0xFF0B1426)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+        ),
+        // Soft neon glow, top-right.
+        Positioned(
+          top: -120,
+          right: -80,
+          child: _glow(AppColors.cyan.withValues(alpha: 0.16), 280),
+        ),
+        // Soft neon glow, bottom-left.
+        Positioned(
+          bottom: -140,
+          left: -90,
+          child: _glow(AppColors.green.withValues(alpha: 0.12), 300),
+        ),
+        child,
+      ],
+    );
+  }
+
+  Widget _glow(Color color, double size) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+          boxShadow: [
+            BoxShadow(color: color, blurRadius: 120, spreadRadius: 40),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A frosted "glassmorphism" card — translucent fill, blur, thin neon edge.
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
+  final double radius;
+  final VoidCallback? onTap;
+
+  const GlassCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.margin,
+    this.radius = 20,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final card = ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.cyan.withValues(alpha: 0.18)
+                  : Colors.black.withValues(alpha: 0.06),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? AppColors.cyan.withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+
+    if (onTap == null) return Padding(padding: margin ?? EdgeInsets.zero, child: card);
+    return Padding(
+      padding: margin ?? EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(radius),
+          onTap: onTap,
+          child: card,
+        ),
+      ),
+    );
+  }
+}
+
+/// A pill button with the neon accent gradient and a soft glow.
+class NeonButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final EdgeInsetsGeometry padding;
+
+  const NeonButton({
+    super.key,
+    required this.child,
+    required this.onPressed,
+    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onPressed,
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              gradient: const LinearGradient(colors: AppColors.accentGradient),
+              boxShadow: enabled
+                  ? [
+                      BoxShadow(
+                        color: AppColors.cyan.withValues(alpha: 0.45),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+              child: IconTheme.merge(
+                data: const IconThemeData(color: Colors.white),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A gradient app bar background (drop into AppBar.flexibleSpace).
+class GradientAppBarBackground extends StatelessWidget {
+  const GradientAppBarBackground({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppColors.brandGradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+    );
+  }
+}
+
+/// Fades + slides a child up into place on first build. Pass [delay] to
+/// stagger a list (e.g. index * 40ms) so items cascade in.
+class AnimatedEntrance extends StatefulWidget {
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+  final double offsetY;
+
+  const AnimatedEntrance({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+    this.duration = const Duration(milliseconds: 380),
+    this.offsetY = 18,
+  });
+
+  @override
+  State<AnimatedEntrance> createState() => _AnimatedEntranceState();
+}
+
+class _AnimatedEntranceState extends State<AnimatedEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration);
+  late final Animation<double> _curve =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(widget.delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _curve,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _curve.value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - _curve.value) * widget.offsetY),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+/// Scales its child down briefly while pressed, for tactile feedback.
+class PressableScale extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final double scale;
+
+  const PressableScale({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.scale = 0.96,
+  });
+
+  @override
+  State<PressableScale> createState() => _PressableScaleState();
+}
+
+class _PressableScaleState extends State<PressableScale> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _down = true),
+      onTapUp: (_) => setState(() => _down = false),
+      onTapCancel: () => setState(() => _down = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _down ? widget.scale : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}

@@ -9,6 +9,7 @@ import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/data/interests_catalog.dart';
 import 'package:login_ui/components/jarvis_avatar.dart';
 import 'package:login_ui/services/ai_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 import 'dart:io';
 
 class ChatRoomPage extends StatefulWidget {
@@ -677,9 +678,22 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             : Colors.black;
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             backgroundColor: themeColor,
+            flexibleSpace: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    themeColor,
+                    Color.lerp(themeColor, AppColors.deepBlue, 0.5) ??
+                        themeColor,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: onThemeColor),
               onPressed: () => Navigator.pop(context),
@@ -874,7 +888,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ],
           ),
-          body: Column(
+          body: NeonBackground(
+            child: Column(
             children: [
               // Messages list
               Expanded(
@@ -963,7 +978,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         final timestamp =
                             (message['timestamp'] as Timestamp?)?.toDate();
 
-                        return Align(
+                        return AnimatedEntrance(
+                          child: Align(
                           alignment: isMe
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
@@ -1142,6 +1158,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                               ],
                             ],
                           ),
+                          ),
                         );
                       },
                     );
@@ -1153,13 +1170,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? colorScheme.surfaceContainerHigh
-                      : colorScheme.surface,
+                  color: (isDark
+                          ? colorScheme.surfaceContainerHigh
+                          : colorScheme.surface)
+                      .withValues(alpha: 0.92),
                   border: Border(
                     top: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-                      width: 0.5,
+                      color: AppColors.cyan.withValues(alpha: 0.18),
+                      width: 1,
                     ),
                   ),
                 ),
@@ -1226,6 +1244,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },

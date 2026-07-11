@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'Pages/auth_page.dart';
 import 'Pages/home_page.dart';
 import 'services/theme_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,57 +19,84 @@ class MyApp extends StatelessWidget {
 
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF1976D2);
-    final secondaryColor = const Color(0xFF42A5F5);
+    const primaryColor = AppColors.primary;
+    const secondaryColor = AppColors.secondary;
 
-    final baseTextColor = isDark ? Colors.white : const Color(0xFF102A43);
+    final baseTextColor = isDark ? AppColors.textDark : AppColors.textLight;
+    final mutedTextColor =
+        isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
     final poppinsTextTheme = GoogleFonts.poppinsTextTheme(
       ThemeData(brightness: brightness).textTheme,
     ).apply(bodyColor: baseTextColor, displayColor: baseTextColor);
+
+    final surface = isDark ? AppColors.surface : AppColors.surfaceLight;
+    final surfaceHigh = isDark ? AppColors.surfaceHigh : Colors.white;
 
     return ThemeData(
       brightness: brightness,
       useMaterial3: true,
       textTheme: poppinsTextTheme,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: brightness,
-        primary: primaryColor,
-        secondary: secondaryColor,
-      ),
-      scaffoldBackgroundColor: isDark
-          ? const Color(0xFF0F172A)
-          : const Color(0xFFF7FAFC),
-      appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? const Color(0xFF102A43) : primaryColor,
+      colorScheme:
+          ColorScheme.fromSeed(
+            seedColor: primaryColor,
+            brightness: brightness,
+          ).copyWith(
+            primary: primaryColor,
+            secondary: secondaryColor,
+            surface: surface,
+            surfaceContainerLow: isDark ? AppColors.surface : const Color(0xFFF1F5FB),
+            surfaceContainerHigh: surfaceHigh,
+            surfaceContainerHighest: surfaceHigh,
+            onSurface: baseTextColor,
+            onSurfaceVariant: mutedTextColor,
+            onPrimary: Colors.white,
+          ),
+      scaffoldBackgroundColor: isDark ? AppColors.bg : AppColors.bgLight,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
       ),
-      cardColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      cardColor: surface,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(999),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? const Color(0xFF243447) : Colors.white,
+        fillColor: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.white,
+        hintStyle: TextStyle(color: mutedTextColor),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: primaryColor.withValues(alpha: 0.25)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.10)
+                : primaryColor.withValues(alpha: 0.20),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor, width: 1.6),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryColor, width: 1.6),
         ),
       ),
     );
@@ -91,7 +119,9 @@ class MyApp extends StatelessWidget {
               // Show loading spinner while checking auth state
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
+                  body: NeonBackground(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 );
               }
 

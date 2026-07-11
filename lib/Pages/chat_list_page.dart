@@ -9,6 +9,7 @@ import 'package:login_ui/Pages/admin_activity_page.dart';
 import 'package:login_ui/Pages/support_chat_page.dart';
 import 'package:login_ui/components/jarvis_avatar.dart';
 import 'package:login_ui/data/interests_catalog.dart';
+import 'package:login_ui/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -430,13 +431,25 @@ class _ChatListPageState extends State<ChatListPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        title: Text('Messages', style: TextStyle(color: colorScheme.onPrimary)),
+        flexibleSpace: const GradientAppBarBackground(),
+        title: Text(
+          'Messages',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            shadows: [
+              Shadow(
+                color: AppColors.cyan.withValues(alpha: 0.6),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.admin_panel_settings, color: colorScheme.onPrimary),
+            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
             tooltip: 'Admin: Club Activity',
             onPressed: () {
               Navigator.push(
@@ -449,9 +462,10 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _chatService.getDirectMessageThreads(),
-        builder: (context, dmSnapshot) {
+      body: NeonBackground(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _chatService.getDirectMessageThreads(),
+          builder: (context, dmSnapshot) {
           return StreamBuilder<QuerySnapshot>(
             stream: _chatService.getUserGroups(),
             builder: (context, groupSnapshot) {
@@ -487,11 +501,16 @@ class _ChatListPageState extends State<ChatListPage> {
                   ),
                   const SizedBox(height: 8),
                   // Pinned Jarvis assistant chat.
-                  Container(
+                  AnimatedEntrance(
+                    child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.secondary.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
                     ),
                     child: ListTile(
                       leading: const JarvisAvatar(radius: 22),
@@ -523,6 +542,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         );
                       },
                     ),
+                  ),
                   ),
                   if (dmDocs.isNotEmpty) ...[
                     ...dmDocs.map((doc) {
@@ -692,6 +712,7 @@ class _ChatListPageState extends State<ChatListPage> {
             },
           );
         },
+        ),
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -703,11 +724,23 @@ class _ChatListPageState extends State<ChatListPage> {
             child: Icon(Icons.login, color: colorScheme.onSecondary),
           ),
           const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'create',
-            onPressed: _showCreateGroupDialog,
-            backgroundColor: colorScheme.primary,
-            child: Icon(Icons.add, color: colorScheme.onPrimary),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.cyan.withValues(alpha: 0.5),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              heroTag: 'create',
+              onPressed: _showCreateGroupDialog,
+              backgroundColor: colorScheme.primary,
+              child: Icon(Icons.add, color: colorScheme.onPrimary),
+            ),
           ),
         ],
       ),

@@ -28,54 +28,99 @@ class Jarvis {
   }
 }
 
-/// A custom-drawn AI assistant avatar — a glowing cyan/green orb with an
-/// orbiting accent. No image asset, no third-party logo.
-class JarvisAvatar extends StatelessWidget {
+/// A custom-drawn AI assistant avatar — a glowing blue orb with an orbiting
+/// accent and a gentle pulsing glow. No image asset, no third-party logo.
+class JarvisAvatar extends StatefulWidget {
   final double radius;
 
-  const JarvisAvatar({super.key, this.radius = 16});
+  /// Whether the orb should pulse. Off for tiny static uses if desired.
+  final bool animate;
+
+  const JarvisAvatar({super.key, this.radius = 16, this.animate = true});
+
+  @override
+  State<JarvisAvatar> createState() => _JarvisAvatarState();
+}
+
+class _JarvisAvatarState extends State<JarvisAvatar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final size = radius * 2;
+    final size = widget.radius * 2;
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(painter: _JarvisAvatarPainter()),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          // pulse 0..1 (eased). Static uses sit at mid-glow.
+          final pulse = widget.animate
+              ? Curves.easeInOut.transform(_controller.value)
+              : 0.5;
+          return CustomPaint(painter: _JarvisAvatarPainter(pulse));
+        },
+      ),
     );
   }
 }
 
 class _JarvisAvatarPainter extends CustomPainter {
+  final double pulse; // 0..1
+  _JarvisAvatarPainter(this.pulse);
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final r = size.width / 2;
 
-    // Background gradient disc.
+    // Background gradient disc (deep blue → navy).
     final bgPaint = Paint()
       ..shader = const RadialGradient(
-        colors: [Color(0xFF0E7490), Color(0xFF0F172A)],
+        colors: [Color(0xFF1976D2), Color(0xFF0D1B34)],
         stops: [0.0, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: r));
     canvas.drawCircle(center, r, bgPaint);
 
-    // Outer ring.
+    // Pulsing outer glow ring (light blue), grows/brightens with pulse.
+    final glowRing = Paint()
+      ..color = const Color(0xFF64B5F6)
+          .withValues(alpha: 0.35 + 0.45 * pulse)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * (0.10 + 0.14 * pulse));
+    canvas.drawCircle(center, r * 0.86, glowRing);
+
+    // Crisp outer ring.
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = r * 0.10
-      ..color = const Color(0xFF8BFFB0).withValues(alpha: 0.85);
+      ..color = const Color(0xFF90CAF9).withValues(alpha: 0.9);
     canvas.drawCircle(center, r * 0.82, ringPaint);
 
     // Core orb with a soft glow.
     final glowPaint = Paint()
-      ..color = const Color(0xFF22D3EE).withValues(alpha: 0.55)
+      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.55)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.25);
-    canvas.drawCircle(center, r * 0.42, glowPaint);
+    canvas.drawCircle(center, r * (0.40 + 0.05 * pulse), glowPaint);
 
     final corePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFA5F3FC), Color(0xFF34D399)],
+        colors: [Color(0xFFBBDEFB), Color(0xFF1E88E5)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromCircle(center: center, radius: r * 0.42));
@@ -93,5 +138,6 @@ class _JarvisAvatarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _JarvisAvatarPainter oldDelegate) =>
+      oldDelegate.pulse != pulse;
 }

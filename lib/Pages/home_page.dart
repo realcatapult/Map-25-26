@@ -9,6 +9,7 @@ import 'package:login_ui/Pages/settings_page.dart';
 import 'package:login_ui/Pages/search_page.dart';
 import 'package:login_ui/components/interests_picker_dialog.dart';
 import 'package:login_ui/services/chat_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 class _CalendarEvent {
   final String title;
@@ -372,12 +373,32 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        title: const Text('GroupApp', style: TextStyle(color: Colors.white)),
+        flexibleSpace: const GradientAppBarBackground(),
+        title: Row(
+          children: [
+            const Icon(Icons.hub, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'GroupApp',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                shadows: [
+                  Shadow(
+                    color: AppColors.secondary.withValues(alpha: 0.8),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: NeonBackground(
+        child: StreamBuilder<QuerySnapshot>(
         stream: _chatService.getUserGroups(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -702,14 +723,26 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+          border: Border(
+            top: BorderSide(
+              color: AppColors.cyan.withValues(alpha: 0.15),
+              width: 1,
+            ),
+          ),
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: AppColors.cyan,
+          unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: 'Chat'),
@@ -723,6 +756,7 @@ class _HomePageState extends State<HomePage> {
             label: 'Settings',
           ),
         ],
+        ),
       ),
     );
   }
