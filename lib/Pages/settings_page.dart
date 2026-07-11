@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/theme_service.dart';
-import 'package:login_ui/Pages/support_chat_page.dart';
 import 'package:login_ui/components/interests_picker_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -287,28 +286,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           onChanged: (value) {
                             ThemeService.setThemeMode(
                               value ? ThemeMode.dark : ThemeMode.light,
-                            );
-                          },
-                        ),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            Icons.auto_awesome,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          title: const Text('Help & Support'),
-                          subtitle: const Text('Ask the AI assistant'),
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SupportChatPage(),
-                              ),
                             );
                           },
                         ),

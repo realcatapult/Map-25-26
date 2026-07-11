@@ -6,6 +6,8 @@ import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/Pages/demo_group_chat_page.dart';
 import 'package:login_ui/Pages/admin_activity_page.dart';
+import 'package:login_ui/Pages/support_chat_page.dart';
+import 'package:login_ui/components/jarvis_avatar.dart';
 import 'package:login_ui/data/interests_catalog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -474,16 +476,55 @@ class _ChatListPageState extends State<ChatListPage> {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (dmDocs.isNotEmpty) ...[
-                    Text(
-                      'Direct Messages',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                  // Direct Messages — always shown (Jarvis is pinned here).
+                  Text(
+                    'Direct Messages',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Pinned Jarvis assistant chat.
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      leading: const JarvisAvatar(radius: 22),
+                      title: Text(
+                        'Jarvis',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Your AI assistant',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
                         color: colorScheme.onSurfaceVariant,
                       ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SupportChatPage(),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
+                  ),
+                  if (dmDocs.isNotEmpty) ...[
                     ...dmDocs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       final participants = List<String>.from(

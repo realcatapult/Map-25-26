@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:login_ui/services/ai_service.dart';
+import 'package:login_ui/components/jarvis_avatar.dart';
 
 class SupportChatPage extends StatefulWidget {
   const SupportChatPage({super.key});
@@ -17,8 +18,10 @@ class _SupportChatPageState extends State<SupportChatPage> {
     const AiMessage(
       role: 'assistant',
       content:
-          "Hi! I'm the GroupApp assistant. Ask me anything — how to create or "
-          "join a group, add calendar events, change settings, and more.",
+          "Hi! I'm Jarvis, the GroupApp assistant. Ask me anything — how to "
+          "create or join a group, add calendar events, change settings, and "
+          "more. Tip: you can also summon me in any group chat by typing "
+          "\"@jarvis\" followed by your question.",
     ),
   ];
   bool _isSending = false;
@@ -81,18 +84,10 @@ class _SupportChatPageState extends State<SupportChatPage> {
         backgroundColor: colorScheme.primary,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: colorScheme.onPrimary.withValues(alpha: 0.2),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 16,
-                color: colorScheme.onPrimary,
-              ),
-            ),
+            const JarvisAvatar(radius: 14),
             const SizedBox(width: 10),
             Text(
-              'AI Assistant',
+              'Jarvis',
               style: TextStyle(color: colorScheme.onPrimary),
             ),
           ],

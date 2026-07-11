@@ -47,8 +47,9 @@ class AiService {
   static const String _model = 'gemini-2.5-flash';
 
   static const String _systemPrompt =
-      "You are the friendly support assistant for GroupApp, a mobile app for "
-      "student clubs and groups.\n\n"
+      "You are Jarvis, the friendly AI assistant built into GroupApp, a mobile "
+      "app for student clubs and groups. Members can summon you in any group "
+      "chat by typing \"@jarvis\" followed by a question.\n\n"
       "GroupApp's features:\n"
       "- Group chats: users create or join group chats. Public groups can be "
       "joined with a 6-character join code, or discovered on the Discover page. "
@@ -86,6 +87,28 @@ class AiService {
       case AiBackend.scripted:
         return _scriptedReply(history);
     }
+  }
+
+  /// Answers an in-chat "@jarvis" question. [recentMessages] is optional recent
+  /// group chat context as {sender, text} maps (oldest first) so Jarvis can
+  /// respond in context.
+  Future<String> askJarvis(
+    String question, {
+    List<Map<String, String>> recentMessages = const [],
+  }) async {
+    final buffer = StringBuffer();
+    if (recentMessages.isNotEmpty) {
+      buffer.writeln('Here is the recent chat for context:');
+      for (final m in recentMessages) {
+        final name = (m['sender'] ?? 'user').split('@').first;
+        buffer.writeln('$name: ${m['text']}');
+      }
+      buffer.writeln('');
+    }
+    buffer.writeln('A group member asked Jarvis: "$question"');
+    buffer.writeln('Reply helpfully and concisely as Jarvis.');
+
+    return sendMessage([AiMessage(role: 'user', content: buffer.toString())]);
   }
 
   // ---------------------------------------------------------------------------

@@ -431,6 +431,45 @@ class ChatService {
     }, SetOptions(merge: true));
   }
 
+  static const String jarvisEmail = 'jarvis@assistant.ai';
+
+  /// Posts a message into a group as the Jarvis assistant. Bypasses the
+  /// "who can post" restriction because it's the assistant replying, not a user.
+  Future<void> postJarvisMessage(String groupId, String text) async {
+    await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .add({
+          'text': text,
+          'senderEmail': jarvisEmail,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+  }
+
+  /// Returns the last [limit] messages in a group (oldest first) as simple
+  /// {sender, text} maps, for giving Jarvis conversation context.
+  Future<List<Map<String, String>>> getRecentGroupMessages(
+    String groupId, {
+    int limit = 10,
+  }) async {
+    final snapshot = await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .get();
+
+    final docs = snapshot.docs.reversed;
+    return docs.map((doc) {
+      final data = doc.data();
+      final sender = (data['senderEmail'] as String?) ?? 'unknown';
+      final text = (data['text'] as String?) ?? '';
+      return {'sender': sender, 'text': text};
+    }).toList();
+  }
+
   Future<void> addGroupEvent(
     String groupId,
     String groupName,

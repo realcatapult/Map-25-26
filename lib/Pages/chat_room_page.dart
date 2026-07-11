@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/data/interests_catalog.dart';
+import 'package:login_ui/components/jarvis_avatar.dart';
+import 'package:login_ui/services/ai_service.dart';
 import 'dart:io';
 
 class ChatRoomPage extends StatefulWidget {
@@ -25,10 +27,12 @@ class ChatRoomPage extends StatefulWidget {
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final ChatService _chatService = ChatService();
+  final AiService _aiService = AiService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
   bool _isSending = false;
+  bool _jarvisThinking = false;
   final Map<String, String?> _profilePictureCache = {};
 
   Future<void> _showAddEventDialog(String groupName) async {
@@ -473,30 +477,64 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return url;
   }
 
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
 
     try {
-      await _chatService.sendMessage(
-        widget.groupId,
-        _messageController.text.trim(),
-      );
+      await _chatService.sendMessage(widget.groupId, text);
       _messageController.clear();
-      // Scroll to bottom after sending
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
+      _scrollToBottom();
+
+      // If the message summons Jarvis, generate and post an AI reply.
+      final question = Jarvis.extractQuestion(text);
+      if (question != null) {
+        _handleJarvis(question);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
+      }
+    }
+  }
+
+  Future<void> _handleJarvis(String question) async {
+    setState(() => _jarvisThinking = true);
+    _scrollToBottom();
+
+    try {
+      final chatContext = await _chatService.getRecentGroupMessages(
+        widget.groupId,
+        limit: 10,
+      );
+      final reply = question.isEmpty
+          ? "Hi! I'm Jarvis. Ask me anything after \"@jarvis\" — for example, "
+              "\"@jarvis when is our next event?\""
+          : await _aiService.askJarvis(question, recentMessages: chatContext);
+      await _chatService.postJarvisMessage(widget.groupId, reply);
+    } catch (e) {
+      await _chatService.postJarvisMessage(
+        widget.groupId,
+        "Sorry, I couldn't answer that right now. Please try again.",
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _jarvisThinking = false);
+        _scrollToBottom();
       }
     }
   }
@@ -865,8 +903,57 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     return ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: messages.length,
+                      itemCount: messages.length + (_jarvisThinking ? 1 : 0),
                       itemBuilder: (context, index) {
+                        // Trailing "Jarvis is thinking…" indicator.
+                        if (_jarvisThinking && index == messages.length) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const JarvisAvatar(radius: 16),
+                                const SizedBox(width: 8),
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? colorScheme.surfaceContainerHigh
+                                        : colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Jarvis is thinking…',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
                         final message =
                             messages[index].data() as Map<String, dynamic>;
                         final text = message['text'] ?? '';
@@ -887,35 +974,42 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (!isMe) ...[
-                                FutureBuilder<String?>(
-                                  future: _getProfilePicture(senderEmail),
-                                  builder: (context, snapshot) {
-                                    return CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: isDark
-                                          ? colorScheme.surfaceContainerHigh
-                                          : colorScheme.surfaceContainerHighest,
-                                      backgroundImage:
-                                          snapshot.hasData &&
-                                              snapshot.data != null
-                                          ? CachedNetworkImageProvider(
-                                              snapshot.data!,
-                                            )
-                                          : null,
-                                      child:
-                                          snapshot.hasData &&
-                                              snapshot.data != null
-                                          ? null
-                                          : Text(
-                                              senderEmail[0].toUpperCase(),
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.white,
+                                if (Jarvis.isJarvis(senderEmail))
+                                  const JarvisAvatar(radius: 16)
+                                else
+                                  FutureBuilder<String?>(
+                                    future: _getProfilePicture(senderEmail),
+                                    builder: (context, snapshot) {
+                                      return CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: isDark
+                                            ? colorScheme.surfaceContainerHigh
+                                            : colorScheme
+                                                .surfaceContainerHighest,
+                                        backgroundImage:
+                                            snapshot.hasData &&
+                                                snapshot.data != null
+                                            ? CachedNetworkImageProvider(
+                                                snapshot.data!,
+                                              )
+                                            : null,
+                                        child:
+                                            snapshot.hasData &&
+                                                snapshot.data != null
+                                            ? null
+                                            : Text(
+                                                senderEmail.isNotEmpty
+                                                    ? senderEmail[0]
+                                                        .toUpperCase()
+                                                    : '?',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white,
+                                                ),
                                               ),
-                                            ),
-                                    );
-                                  },
-                                ),
+                                      );
+                                    },
+                                  ),
                                 const SizedBox(width: 8),
                               ],
                               Container(
@@ -941,10 +1035,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                   children: [
                                     if (!isMe)
                                       Text(
-                                        senderEmail.split('@')[0],
+                                        Jarvis.isJarvis(senderEmail)
+                                            ? Jarvis.displayName
+                                            : senderEmail.split('@')[0],
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: colorScheme.onSurfaceVariant,
+                                          color: Jarvis.isJarvis(senderEmail)
+                                              ? const Color(0xFF0E7490)
+                                              : colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
