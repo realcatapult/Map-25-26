@@ -136,23 +136,23 @@ class _HomePageState extends State<HomePage> {
 
     final items = await _chatService.getRecentNotifications(groups);
 
-    const demoNotification = {
-      'type': 'group',
-      'groupName': 'Community Service Club',
-      'senderEmail': 'organizer@demo.com',
-      'text': 'Who wants to go to the foodbank tomorrow?',
-      'groupId': '',
-      'groupName_display': 'Community Service Club',
-    };
-
     if (!mounted) return;
     setState(() {
-      _notifications = [demoNotification, ...items];
+      _notifications = items;
       _isLoadingNotifications = false;
     });
   }
 
   String _formatNotificationSubtitle(Map<String, dynamic> item) {
+    if ((item['type'] as String?) == 'eventReminder') {
+      final ts = item['date'] as Timestamp?;
+      if (ts == null) return '';
+      final date = ts.toDate();
+      final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+      final minute = date.minute.toString().padLeft(2, '0');
+      final period = date.hour < 12 ? 'AM' : 'PM';
+      return '${date.month}/${date.day} at $hour:$minute $period';
+    }
     final sender = (item['senderEmail'] as String?) ?? '';
     if (sender.isEmpty) return '';
     final name = sender.split('@').first;
@@ -161,6 +161,9 @@ class _HomePageState extends State<HomePage> {
 
   String _formatNotificationTitle(Map<String, dynamic> item) {
     final type = item['type'] as String?;
+    if (type == 'eventReminder') {
+      return '${item['groupName'] ?? 'Group'} reminder';
+    }
     if (type == 'dm') {
       return item['otherEmail'] as String? ?? 'Direct message';
     }
@@ -168,6 +171,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _formatNotificationBody(Map<String, dynamic> item) {
+    if ((item['type'] as String?) == 'eventReminder') {
+      final title = (item['title'] as String?) ?? 'Upcoming event';
+      final description = (item['description'] as String?) ?? '';
+      return description.isEmpty ? title : '$title • $description';
+    }
     final text = (item['text'] as String?) ?? '';
     final imageUrl = item['imageUrl'] as String?;
     if (text.isNotEmpty) return text;
@@ -177,6 +185,19 @@ class _HomePageState extends State<HomePage> {
 
   void _openNotification(Map<String, dynamic> item) {
     final type = item['type'] as String?;
+    if (type == 'eventReminder') {
+      final groupId = item['groupId'] as String?;
+      final groupName = item['groupName'] as String?;
+      if (groupId == null || groupName == null) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              ChatRoomPage(groupId: groupId, groupName: groupName),
+        ),
+      );
+      return;
+    }
     if (type == 'dm') {
       final threadId = item['threadId'] as String?;
       final otherEmail = item['otherEmail'] as String?;

@@ -176,8 +176,10 @@ class _ChatListPageState extends State<ChatListPage> {
                 const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Public Group'),
-                  subtitle: const Text('Anyone with the code can join'),
+                  title: const Text('Request Public Listing'),
+                  subtitle: const Text(
+                    'Clubs start private and hidden until an admin approves discovery.',
+                  ),
                   value: _isPublic,
                   onChanged: (value) {
                     setDialogState(() {
@@ -331,7 +333,13 @@ class _ChatListPageState extends State<ChatListPage> {
                             _overviewController.clear();
                             _keywordsController.clear();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Group created!')),
+                              SnackBar(
+                                content: Text(
+                                  _isPublic
+                                      ? 'Group created privately. An admin can publish it from group settings.'
+                                      : 'Private group created.',
+                                ),
+                              ),
                             );
                           }
                         } catch (e) {
@@ -448,15 +456,21 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-            tooltip: 'Admin: Club Activity',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminActivityPage(),
-                ),
+          FutureBuilder<bool>(
+            future: _chatService.isCurrentUserSchoolAdmin(),
+            builder: (context, snapshot) {
+              if (snapshot.data != true) return const SizedBox.shrink();
+              return IconButton(
+                icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                tooltip: 'Admin: Club Activity',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminActivityPage(),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -656,6 +670,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       final members = List<String>.from(
                         groupData['members'] ?? [],
                       );
+                      final isPublic = groupData['isPublic'] as bool? ?? false;
                       final themeColorValue =
                           groupData['themeColor'] ?? Colors.grey[800]!.toARGB32();
                       final themeIconName = groupData['themeIcon'] ?? 'group';
@@ -681,7 +696,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             ),
                           ),
                           subtitle: Text(
-                            '${members.length} members',
+                            '${members.length} members • ${isPublic ? 'Discoverable' : 'Private'}',
                             style: TextStyle(
                               color: colorScheme.onSurfaceVariant,
                               fontSize: 12,

@@ -9,6 +9,7 @@ class ChatService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   static const String demoUserEmail = 'demo@groupapp.com';
+  static const String _defaultReminderWindow = '24h';
 
   // Generate a random 6-character join code
   String _generateJoinCode() {
@@ -47,12 +48,18 @@ class ChatService {
       'createdAt': FieldValue.serverTimestamp(),
       'members': members,
       'joinCode': joinCode,
-      'isPublic': isPublic,
+      // New clubs start private and undiscoverable until a group admin
+      // explicitly enables discovery from settings.
+      'isPublic': false,
+      'requestedPublicOnCreate': isPublic,
+      'publicRequestStatus': isPublic ? 'pending' : 'none',
+      if (isPublic) 'publicRequestSubmittedAt': FieldValue.serverTimestamp(),
       'admins': [currentUser.email],
       'whoCanPost': whoCanPost,
       'themeColor': themeColor,
       'themeIcon': themeIcon,
       'keywords': keywords ?? const <String>[],
+      'defaultReminderWindow': _defaultReminderWindow,
     });
 
     return groupDoc.id;
@@ -104,6 +111,13 @@ class ChatService {
     String groupId,
     String message, {
     String? imageUrl,
+    String type = 'text',
+    Map<String, dynamic>? file,
+    Map<String, dynamic>? poll,
+    String? replyToMessageId,
+    String? replyToText,
+    String? replyToSender,
+    String? threadRootId,
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) throw Exception('Not logged in');
@@ -127,10 +141,18 @@ class ChatService {
         .doc(groupId)
         .collection('messages')
         .add({
+          'type': type,
           'text': message,
           'senderEmail': currentUser.email,
           'timestamp': FieldValue.serverTimestamp(),
           if (imageUrl != null) 'imageUrl': imageUrl,
+          if (file != null) 'file': file,
+          if (poll != null) 'poll': poll,
+          if (replyToMessageId != null) 'replyToMessageId': replyToMessageId,
+          if (replyToText != null) 'replyToText': replyToText,
+          if (replyToSender != null) 'replyToSender': replyToSender,
+          if (threadRootId != null) 'threadRootId': threadRootId,
+          'reactions': const <String>[],
         });
   }
 
@@ -145,6 +167,32 @@ class ChatService {
 
     await ref.putFile(imageFile);
     return await ref.getDownloadURL();
+  }
+
+  Future<Map<String, dynamic>> uploadGroupFile(
+    File file,
+    String groupId,
+    String originalName,
+  ) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}_${currentUser.uid}_$originalName';
+    final ref = _storage.ref().child('chat_files/$groupId/$fileName');
+
+    await ref.putFile(file);
+    final url = await ref.getDownloadURL();
+    final extension = originalName.contains('.')
+        ? originalName.split('.').last.toLowerCase()
+        : '';
+
+    return {
+      'name': originalName,
+      'url': url,
+      'extension': extension,
+      'sizeBytes': await file.length(),
+    };
   }
 
   // Upload profile picture and return URL
@@ -167,6 +215,16 @@ class ChatService {
     await _firestore.collection('users').doc(currentUser.uid).set({
       'email': currentUser.email,
       'profilePicture': imageUrl,
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> setCurrentUserSchoolAdmin(bool isSchoolAdmin) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('Not logged in');
+
+    await _firestore.collection('users').doc(currentUser.uid).set({
+      'email': currentUser.email,
+      'schoolAdmin': isSchoolAdmin,
     }, SetOptions(merge: true));
   }
 
@@ -227,6 +285,96 @@ class ChatService {
     if (updates.isNotEmpty) {
       await _firestore.collection('groups').doc(groupId).update(updates);
     }
+  }
+
+  Future<bool> isCurrentUserSchoolAdmin() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return false;
+
+    final tokenResult = await currentUser.getIdTokenResult(true);
+    final claimValue = tokenResult.claims?['schoolAdmin'];
+    if (claimValue == true) {
+      return true;
+    }
+
+    final doc = await _firestore.collection('users').doc(currentUser.uid).get();
+    return doc.data()?['schoolAdmin'] as bool? ?? false;
+  }
+
+  Stream<QuerySnapshot> getPendingPublicApprovalGroups() {
+    return _firestore
+        .collection('groups')
+        .where('publicRequestStatus', isEqualTo: 'pending')
+        .orderBy('publicRequestSubmittedAt', descending: false)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getAllGroupsForAdmin() {
+    return _firestore
+        .collection('groups')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<void> requestPublicApproval(String groupId) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'isPublic': false,
+      'requestedPublicOnCreate': true,
+      'publicRequestStatus': 'pending',
+      'publicRequestSubmittedAt': FieldValue.serverTimestamp(),
+      'publicReviewedAt': FieldValue.delete(),
+      'publicReviewedBy': FieldValue.delete(),
+      'publicRejectionReason': FieldValue.delete(),
+    });
+  }
+
+  Future<void> cancelPublicApprovalRequest(String groupId) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'isPublic': false,
+      'requestedPublicOnCreate': false,
+      'publicRequestStatus': 'none',
+      'publicRequestSubmittedAt': FieldValue.delete(),
+      'publicReviewedAt': FieldValue.delete(),
+      'publicReviewedBy': FieldValue.delete(),
+      'publicRejectionReason': FieldValue.delete(),
+    });
+  }
+
+  Future<void> setGroupPrivate(String groupId) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'isPublic': false,
+      'requestedPublicOnCreate': false,
+      'publicRequestStatus': 'none',
+      'publicRequestSubmittedAt': FieldValue.delete(),
+      'publicReviewedAt': FieldValue.delete(),
+      'publicReviewedBy': FieldValue.delete(),
+      'publicRejectionReason': FieldValue.delete(),
+    });
+  }
+
+  Future<void> reviewPublicApproval(
+    String groupId, {
+    required bool approve,
+    String? rejectionReason,
+  }) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) {
+      throw Exception('Not logged in');
+    }
+
+    final isSchoolAdmin = await isCurrentUserSchoolAdmin();
+    if (!isSchoolAdmin) {
+      throw Exception('Only school admins can approve club discovery');
+    }
+
+    await _firestore.collection('groups').doc(groupId).update({
+      'isPublic': approve,
+      'requestedPublicOnCreate': approve,
+      'publicRequestStatus': approve ? 'approved' : 'rejected',
+      'publicReviewedAt': FieldValue.serverTimestamp(),
+      'publicReviewedBy': currentUser.email,
+      'publicRejectionReason': approve ? FieldValue.delete() : (rejectionReason ?? 'Needs review'),
+    });
   }
 
   // Upload group banner image and return URL
@@ -340,6 +488,7 @@ class ChatService {
         .doc(threadId)
         .collection('messages')
         .add({
+          'type': 'text',
           'text': message,
           'senderEmail': currentUser.email,
           'timestamp': FieldValue.serverTimestamp(),
@@ -441,10 +590,143 @@ class ChatService {
         .doc(groupId)
         .collection('messages')
         .add({
+          'type': 'summary',
           'text': text,
           'senderEmail': jarvisEmail,
           'timestamp': FieldValue.serverTimestamp(),
+          'reactions': const <String>[],
         });
+  }
+
+  Future<void> sendPoll(
+    String groupId, {
+    required String question,
+    required List<String> options,
+  }) async {
+    final trimmedOptions = options
+        .map((option) => option.trim())
+        .where((option) => option.isNotEmpty)
+        .toList();
+    if (trimmedOptions.length < 2) {
+      throw Exception('Polls need at least two options');
+    }
+
+    final pollOptions = <Map<String, dynamic>>[];
+    final votes = <String, List<String>>{};
+    for (var index = 0; index < trimmedOptions.length; index++) {
+      final id = 'option_$index';
+      pollOptions.add({'id': id, 'label': trimmedOptions[index]});
+      votes[id] = <String>[];
+    }
+
+    await sendMessage(
+      groupId,
+      question,
+      type: 'poll',
+      poll: {
+        'question': question,
+        'options': pollOptions,
+        'votes': votes,
+      },
+    );
+  }
+
+  Future<void> togglePollVote(
+    String groupId,
+    String messageId,
+    String optionId,
+  ) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) {
+      throw Exception('Not logged in');
+    }
+
+    final docRef = _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .doc(messageId);
+    final snapshot = await docRef.get();
+    final data = snapshot.data();
+    if (data == null) throw Exception('Poll not found');
+
+    final poll = Map<String, dynamic>.from(data['poll'] ?? const {});
+    final rawVotes = Map<String, dynamic>.from(poll['votes'] ?? const {});
+    final nextVotes = <String, List<String>>{};
+    for (final entry in rawVotes.entries) {
+      nextVotes[entry.key] = List<String>.from(entry.value ?? const <String>[]);
+    }
+
+    for (final key in nextVotes.keys) {
+      nextVotes[key] = nextVotes[key]!
+          .where((email) => email != currentUser.email)
+          .toList();
+    }
+
+    final currentOptionVotes = nextVotes[optionId] ?? <String>[];
+    final hadVote = List<String>.from(rawVotes[optionId] ?? const <String>[])
+        .contains(currentUser.email);
+    if (!hadVote) {
+      currentOptionVotes.add(currentUser.email!);
+    }
+    nextVotes[optionId] = currentOptionVotes;
+
+    poll['votes'] = nextVotes;
+    await docRef.update({'poll': poll});
+  }
+
+  String _reactionKey(String emoji, String email) => '$emoji::$email';
+
+  Future<void> toggleMessageReaction(
+    String groupId,
+    String messageId,
+    String emoji,
+  ) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null || currentUser.email == null) {
+      throw Exception('Not logged in');
+    }
+
+    final docRef = _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .doc(messageId);
+    final snapshot = await docRef.get();
+    final data = snapshot.data();
+    if (data == null) throw Exception('Message not found');
+
+    final key = _reactionKey(emoji, currentUser.email!);
+    final reactions = List<String>.from(data['reactions'] ?? const <String>[]);
+    final contains = reactions.contains(key);
+
+    await docRef.update({
+      'reactions': contains
+          ? FieldValue.arrayRemove([key])
+          : FieldValue.arrayUnion([key]),
+    });
+  }
+
+  Future<void> pinMessage(
+    String groupId,
+    String messageId,
+    Map<String, dynamic> message,
+  ) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'pinnedMessageId': messageId,
+      'pinnedMessageText': (message['text'] as String?) ?? '',
+      'pinnedMessageSender': (message['senderEmail'] as String?) ?? '',
+      'pinnedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> clearPinnedMessage(String groupId) async {
+    await _firestore.collection('groups').doc(groupId).update({
+      'pinnedMessageId': FieldValue.delete(),
+      'pinnedMessageText': FieldValue.delete(),
+      'pinnedMessageSender': FieldValue.delete(),
+      'pinnedAt': FieldValue.delete(),
+    });
   }
 
   /// Returns the last [limit] messages in a group (oldest first) as simple
@@ -504,6 +786,52 @@ class ChatService {
         .get();
 
     return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getUpcomingEventReminders(
+    List<Map<String, String>> groups,
+  ) async {
+    final now = DateTime.now();
+    final reminderCutoff = now.add(const Duration(days: 2));
+    final reminders = <Map<String, dynamic>>[];
+
+    for (final group in groups) {
+      final groupId = group['id'] ?? '';
+      if (groupId.isEmpty) continue;
+
+      final events = await getGroupEvents(groupId);
+      for (final event in events) {
+        final dateValue = event['date'];
+        final eventDate = dateValue is Timestamp
+            ? dateValue.toDate()
+            : (dateValue is DateTime ? dateValue : null);
+        if (eventDate == null) continue;
+        if (eventDate.isBefore(now) || eventDate.isAfter(reminderCutoff)) {
+          continue;
+        }
+
+        reminders.add({
+          'type': 'eventReminder',
+          'groupId': groupId,
+          'groupName': group['name'] ?? 'Group',
+          'title': event['title'] ?? 'Upcoming event',
+          'description': event['description'] ?? '',
+          'date': Timestamp.fromDate(eventDate),
+          'timestamp': Timestamp.fromDate(eventDate),
+        });
+      }
+    }
+
+    reminders.sort((a, b) {
+      final aTime = a['date'] as Timestamp?;
+      final bTime = b['date'] as Timestamp?;
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return aTime.compareTo(bTime);
+    });
+
+    return reminders;
   }
 
   Future<Map<String, dynamic>?> _latestGroupMessage(
@@ -577,6 +905,8 @@ class ChatService {
         items.add(latest);
       }
     }
+
+    items.addAll(await getUpcomingEventReminders(groups));
 
     final threadSnapshot = await _firestore
         .collection('directMessages')

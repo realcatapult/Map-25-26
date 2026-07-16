@@ -3,8 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
+import 'Pages/admin_dashboard_page.dart';
 import 'Pages/auth_page.dart';
 import 'Pages/home_page.dart';
+import 'services/chat_service.dart';
 import 'services/theme_service.dart';
 import 'theme/app_theme.dart';
 
@@ -16,6 +18,28 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  Widget _postAuthLanding() {
+    final chatService = ChatService();
+    return FutureBuilder<bool>(
+      future: chatService.isCurrentUserSchoolAdmin(),
+      builder: (context, adminSnapshot) {
+        if (adminSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: NeonBackground(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        if (adminSnapshot.data == true) {
+          return AdminDashboardPage();
+        }
+
+        return const HomePage();
+      },
+    );
+  }
 
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
@@ -114,7 +138,7 @@ class MyApp extends StatelessWidget {
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
           home: StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.authStateChanges(),
+            stream: FirebaseAuth.instance.idTokenChanges(),
             builder: (context, snapshot) {
               // Show loading spinner while checking auth state
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -127,7 +151,7 @@ class MyApp extends StatelessWidget {
 
               // If user is logged in, show HomePage
               if (snapshot.hasData) {
-                return HomePage();
+                return _postAuthLanding();
               }
 
               // If user is not logged in, show AuthPage

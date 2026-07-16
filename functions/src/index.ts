@@ -1,10 +1,16 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import Anthropic from "@anthropic-ai/sdk";
+import * as admin from "firebase-admin";
 
 // The Anthropic API key is stored as a Firebase secret, never shipped in the app.
 // Set it once with:  firebase functions:secrets:set ANTHROPIC_API_KEY
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
+const ADMIN_SIGNUP_CODE = defineSecret("ADMIN_SIGNUP_CODE");
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 // System prompt scopes Claude to *this* app so it answers support questions
 // about GroupApp's real features rather than acting as a generic chatbot.
@@ -75,5 +81,56 @@ export const supportChat = onCall(
       console.error("Claude API error:", err);
       throw new HttpsError("internal", "The assistant is unavailable right now. Please try again.");
     }
+  },
+);
+
+export const verifyAdminSignupCode = onCall(
+  {
+    secrets: [ADMIN_SIGNUP_CODE],
+    region: "us-central1",
+    maxInstances: 10,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "You must be signed in.");
+    }
+
+    const rawCode = request.data?.code;
+    const submittedCode = String(rawCode ?? "").trim();
+    if (!submittedCode) {
+      throw new HttpsError("invalid-argument", "Verification code is required.");
+    }
+
+    const expectedCode = ADMIN_SIGNUP_CODE.value().trim();
+    if (!expectedCode) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Admin verification is not configured.",
+      );
+    }
+    if (submittedCode != expectedCode) {
+      throw new HttpsError("permission-denied", "Invalid verification code.");
+    }
+
+    const uid = request.auth.uid;
+    const userRecord = await admin.auth().getUser(uid);
+    const existingClaims = userRecord.customClaims || {};
+
+    await admin.auth().setCustomUserClaims(uid, {
+      ...existingClaims,
+      schoolAdmin: true,
+    });
+
+    await admin.firestore().collection("users").doc(uid).set(
+      {
+        email: request.auth.token.email ?? null,
+        schoolAdmin: true,
+        schoolAdminVerifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        schoolAdminVerifiedBy: "verifyAdminSignupCode",
+      },
+      { merge: true },
+    );
+
+    return { success: true };
   },
 );

@@ -1,336 +1,695 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-// test 
-
-enum _ClubStatus { active, atRisk, ghost }
-
-class _ClubActivity {
-  final String name;
-  final IconData icon;
-  final Color color;
-  final _ClubStatus status;
-  final int messagesThisMonth;
-  final int daysSinceLastMeeting;
-  final int memberCount;
-  final int activeMembers;
-  final String lastActive;
-  final List<int> weeklyMessages; // 8 weeks, newest last
-
-  const _ClubActivity({
-    required this.name,
-    required this.icon,
-    required this.color,
-    required this.status,
-    required this.messagesThisMonth,
-    required this.daysSinceLastMeeting,
-    required this.memberCount,
-    required this.activeMembers,
-    required this.lastActive,
-    required this.weeklyMessages,
-  });
-
-  double get engagementRate => activeMembers / memberCount;
-}
-
-const List<_ClubActivity> _clubs = [
-  _ClubActivity(
-    name: 'App Development Club',
-    icon: Icons.code,
-    color: Color(0xFF1A237E),
-    status: _ClubStatus.active,
-    messagesThisMonth: 214,
-    daysSinceLastMeeting: 4,
-    memberCount: 5,
-    activeMembers: 5,
-    lastActive: 'Today',
-    weeklyMessages: [28, 35, 41, 30, 38, 44, 50, 48],
-  ),
-  _ClubActivity(
-    name: 'Photography Club',
-    icon: Icons.camera_alt,
-    color: Color(0xFF1565C0),
-    status: _ClubStatus.active,
-    messagesThisMonth: 187,
-    daysSinceLastMeeting: 7,
-    memberCount: 124,
-    activeMembers: 98,
-    lastActive: '2 days ago',
-    weeklyMessages: [20, 24, 19, 30, 27, 35, 29, 33],
-  ),
-  _ClubActivity(
-    name: 'Coding Club',
-    icon: Icons.terminal,
-    color: Color(0xFF2E7D32),
-    status: _ClubStatus.active,
-    messagesThisMonth: 143,
-    daysSinceLastMeeting: 10,
-    memberCount: 89,
-    activeMembers: 62,
-    lastActive: '3 days ago',
-    weeklyMessages: [15, 18, 22, 17, 20, 21, 19, 24],
-  ),
-  _ClubActivity(
-    name: 'Chess Club',
-    icon: Icons.extension,
-    color: Color(0xFF6A1B9A),
-    status: _ClubStatus.atRisk,
-    messagesThisMonth: 34,
-    daysSinceLastMeeting: 28,
-    memberCount: 57,
-    activeMembers: 12,
-    lastActive: '18 days ago',
-    weeklyMessages: [12, 9, 7, 5, 4, 3, 2, 2],
-  ),
-  _ClubActivity(
-    name: 'Hiking & Outdoors',
-    icon: Icons.terrain,
-    color: Color(0xFFE65100),
-    status: _ClubStatus.active,
-    messagesThisMonth: 96,
-    daysSinceLastMeeting: 14,
-    memberCount: 203,
-    activeMembers: 154,
-    lastActive: '1 day ago',
-    weeklyMessages: [10, 14, 16, 12, 15, 13, 17, 11],
-  ),
-  _ClubActivity(
-    name: 'Art & Design Club',
-    icon: Icons.palette,
-    color: Color(0xFFC62828),
-    status: _ClubStatus.atRisk,
-    messagesThisMonth: 21,
-    daysSinceLastMeeting: 35,
-    memberCount: 76,
-    activeMembers: 8,
-    lastActive: '22 days ago',
-    weeklyMessages: [9, 6, 5, 3, 2, 2, 2, 1],
-  ),
-  _ClubActivity(
-    name: 'Environmental Club',
-    icon: Icons.eco,
-    color: Color(0xFF388E3C),
-    status: _ClubStatus.ghost,
-    messagesThisMonth: 0,
-    daysSinceLastMeeting: 94,
-    memberCount: 41,
-    activeMembers: 1,
-    lastActive: '94 days ago',
-    weeklyMessages: [1, 0, 0, 0, 0, 0, 0, 0],
-  ),
-  _ClubActivity(
-    name: 'Model UN',
-    icon: Icons.public,
-    color: Color(0xFF0277BD),
-    status: _ClubStatus.ghost,
-    messagesThisMonth: 2,
-    daysSinceLastMeeting: 78,
-    memberCount: 33,
-    activeMembers: 2,
-    lastActive: '61 days ago',
-    weeklyMessages: [3, 1, 0, 0, 0, 0, 1, 0],
-  ),
-  _ClubActivity(
-    name: 'Finance & Investing Club',
-    icon: Icons.trending_up,
-    color: Color(0xFF00695C),
-    status: _ClubStatus.ghost,
-    messagesThisMonth: 0,
-    daysSinceLastMeeting: 112,
-    memberCount: 28,
-    activeMembers: 0,
-    lastActive: '112 days ago',
-    weeklyMessages: [0, 0, 0, 0, 0, 0, 0, 0],
-  ),
-];
+import 'package:login_ui/services/auth_service.dart';
+import 'package:login_ui/services/chat_service.dart';
 
 class AdminActivityPage extends StatefulWidget {
-  const AdminActivityPage({super.key});
+  final bool bypassAccessCheck;
+
+  const AdminActivityPage({
+    super.key,
+    this.bypassAccessCheck = false,
+  });
 
   @override
   State<AdminActivityPage> createState() => _AdminActivityPageState();
 }
 
-class _AdminActivityPageState extends State<AdminActivityPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  _ClubStatus? _filter;
+class _AdminActivityPageState extends State<AdminActivityPage> {
+  final ChatService _chatService = ChatService();
+  final AuthService _authService = AuthService();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final Map<String, bool> _reviewing = {};
+  final Map<int, bool> _demoReviewing = {};
+  final Map<int, String> _demoReviewStatus = {};
+  final Map<int, String> _demoRejectionReason = {};
+  bool _isSigningIn = false;
+  static const List<Map<String, String>> _demoPendingApprovals = [
+    {
+      'name': 'Robotics League',
+      'createdBy': 'coach@school.edu',
+      'overview': 'Competitive robotics projects and weekly build sessions.',
+      'members': '22',
+      'keywords': 'STEM, Robotics, Engineering',
+    },
+    {
+      'name': 'Campus Debate Union',
+      'createdBy': 'debatelead@school.edu',
+      'overview': 'Public speaking and policy debate prep for tournaments.',
+      'members': '18',
+      'keywords': 'Debate, Public Speaking, Policy',
+    },
+    {
+      'name': 'Environmental Action Crew',
+      'createdBy': 'ecoadvisor@school.edu',
+      'overview': 'Recycling drives, clean-up events, and sustainability campaigns.',
+      'members': '27',
+      'keywords': 'Environment, Service, Sustainability',
+    },
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
+  Future<void> _signInAsAdmin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter admin email and password.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSigningIn = true;
+    });
+
+    try {
+      await _authService.signInWithEmailPassword(email, password);
+      final isAdmin = await _chatService.isCurrentUserSchoolAdmin();
+      if (!isAdmin) {
+        await _authService.signOut();
+        throw Exception('This account is not marked as a school admin.');
+      }
+      if (!mounted) return;
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _reviewGroup(
+    String groupId, {
+    required bool approve,
+    String? rejectionReason,
+  }) async {
+    setState(() {
+      _reviewing[groupId] = true;
+    });
+
+    try {
+      await _chatService.reviewPublicApproval(
+        groupId,
+        approve: approve,
+        rejectionReason: rejectionReason,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            approve
+                ? 'Club approved for discovery.'
+                : 'Club public listing request rejected.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error reviewing club: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reviewing.remove(groupId);
+        });
+      }
+    }
+  }
+
+  Future<String?> _promptRejectionReason(String clubName) async {
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reject Club Request'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Add a reason that $clubName owner will see.'),
+              const SizedBox(height: 10),
+              TextField(
+                controller: reasonController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  hintText: 'Example: Please add a staff advisor and clear activity plan.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(reasonController.text.trim()),
+              child: const Text('Submit Reject'),
+            ),
+          ],
+        );
+      },
+    );
+    reasonController.dispose();
+    return reason;
+  }
+
+  Future<void> _reviewDemoGroup(
+    int index, {
+    required bool approve,
+    String? rejectionReason,
+  }) async {
+    setState(() {
+      _demoReviewing[index] = true;
+    });
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!mounted) return;
       setState(() {
-        switch (_tabController.index) {
-          case 0:
-            _filter = null;
-            break;
-          case 1:
-            _filter = _ClubStatus.active;
-            break;
-          case 2:
-            _filter = _ClubStatus.atRisk;
-            break;
-          case 3:
-            _filter = _ClubStatus.ghost;
-            break;
+        _demoReviewStatus[index] = approve ? 'approved' : 'rejected';
+        if (approve) {
+          _demoRejectionReason.remove(index);
+        } else {
+          _demoRejectionReason[index] = rejectionReason ?? 'Needs review';
         }
       });
-    });
-  }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  List<_ClubActivity> get _filtered =>
-      _filter == null ? _clubs : _clubs.where((c) => c.status == _filter).toList();
-
-  int get _activeCount =>
-      _clubs.where((c) => c.status == _ClubStatus.active).length;
-  int get _atRiskCount =>
-      _clubs.where((c) => c.status == _ClubStatus.atRisk).length;
-  int get _ghostCount =>
-      _clubs.where((c) => c.status == _ClubStatus.ghost).length;
-
-  Color _statusColor(_ClubStatus s) {
-    switch (s) {
-      case _ClubStatus.active:
-        return const Color(0xFF2E7D32);
-      case _ClubStatus.atRisk:
-        return const Color(0xFFF57F17);
-      case _ClubStatus.ghost:
-        return const Color(0xFFC62828);
-    }
-  }
-
-  String _statusLabel(_ClubStatus s) {
-    switch (s) {
-      case _ClubStatus.active:
-        return 'Active';
-      case _ClubStatus.atRisk:
-        return 'Low Activity';
-      case _ClubStatus.ghost:
-        return 'Inactive';
-    }
-  }
-
-  IconData _statusIcon(_ClubStatus s) {
-    switch (s) {
-      case _ClubStatus.active:
-        return Icons.check_circle;
-      case _ClubStatus.atRisk:
-        return Icons.warning_amber_rounded;
-      case _ClubStatus.ghost:
-        return Icons.do_not_disturb_on;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            approve
+                ? 'Demo club approved for discovery.'
+                : 'Demo club rejected. Reason saved for owner view.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _demoReviewing.remove(index);
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A237E),
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Club Activity Monitor',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    final colorScheme = Theme.of(context).colorScheme;
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (widget.bypassAccessCheck && currentUser == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: colorScheme.primary,
+          iconTheme: IconThemeData(color: colorScheme.onPrimary),
+          title: Text(
+            'Admin Login',
+            style: TextStyle(color: colorScheme.onPrimary),
+          ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          tabs: [
-            Tab(text: 'All (${_clubs.length})'),
-            Tab(text: 'Active ($_activeCount)'),
-            Tab(text: 'Low Activity ($_atRiskCount)'),
-            Tab(text: 'Inactive ($_ghostCount)'),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // Summary cards
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _SummaryCard(
-                  label: 'Active',
-                  count: _activeCount,
-                  color: const Color(0xFF2E7D32),
-                  icon: Icons.check_circle,
-                ),
-                const SizedBox(width: 8),
-                _SummaryCard(
-                  label: 'At Risk',
-                  count: _atRiskCount,
-                  color: const Color(0xFFF57F17),
-                  icon: Icons.warning_amber_rounded,
-                ),
-                const SizedBox(width: 8),
-                _SummaryCard(
-                  label: 'Ghost',
-                  count: _ghostCount,
-                  color: const Color(0xFFC62828),
-                  icon: Icons.do_not_disturb_on,
-                ),
-              ],
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sign in with a school admin account to review club approvals.',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(labelText: 'Admin email'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    onSubmitted: (_) => _isSigningIn ? null : _signInAsAdmin(),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _isSigningIn ? null : _signInAsAdmin,
+                    child: _isSigningIn
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Login as Admin'),
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
+      );
+    }
 
-          // Ghost club callout
-          if (_filter == null || _filter == _ClubStatus.ghost)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFF57F17), width: 1),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline,
-                        color: Color(0xFFF57F17), size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Ghost clubs are flagged when there is no meeting or chat activity for 60+ days. '
-                        'At Risk clubs have declining engagement over the past 30 days.',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.orange[900]),
-                      ),
-                    ),
-                  ],
+    return FutureBuilder<bool>(
+      future: _chatService.isCurrentUserSchoolAdmin(),
+      builder: (context, accessSnapshot) {
+        if (accessSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (accessSnapshot.data != true) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Club Activity')),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Only school admins can review club activity and approve public discovery.',
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
+          );
+        }
 
-          // Club list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              itemCount: _filtered.length,
-              itemBuilder: (context, index) {
-                final club = _filtered[index];
-                return _ClubCard(
-                  club: club,
-                  statusColor: _statusColor(club.status),
-                  statusLabel: _statusLabel(club.status),
-                  statusIcon: _statusIcon(club.status),
-                );
-              },
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: colorScheme.primary,
+            iconTheme: IconThemeData(color: colorScheme.onPrimary),
+            title: Text(
+              'Club Activity Admin',
+              style: TextStyle(color: colorScheme.onPrimary),
             ),
           ),
-        ],
-      ),
+          body: StreamBuilder<QuerySnapshot>(
+            stream: _chatService.getAllGroupsForAdmin(),
+            builder: (context, allGroupsSnapshot) {
+              if (allGroupsSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (allGroupsSnapshot.hasError) {
+                return Center(child: Text('Error: ${allGroupsSnapshot.error}'));
+              }
+
+              final groups = allGroupsSnapshot.data?.docs ?? [];
+              final pendingCount = groups.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return (data['publicRequestStatus'] as String? ?? 'none') == 'pending';
+              }).length;
+              final publicCount = groups.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return data['isPublic'] as bool? ?? false;
+              }).length;
+              final privateCount = groups.length - publicCount;
+
+              return StreamBuilder<QuerySnapshot>(
+                stream: _chatService.getPendingPublicApprovalGroups(),
+                builder: (context, pendingSnapshot) {
+                  if (pendingSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (pendingSnapshot.hasError) {
+                    return Center(child: Text('Error: ${pendingSnapshot.error}'));
+                  }
+
+                  final pendingGroups = pendingSnapshot.data?.docs ?? [];
+
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Row(
+                        children: [
+                          _SummaryCard(
+                            label: 'Pending',
+                            count: pendingCount,
+                            color: const Color(0xFFF57F17),
+                            icon: Icons.pending_actions,
+                          ),
+                          const SizedBox(width: 8),
+                          _SummaryCard(
+                            label: 'Public',
+                            count: publicCount,
+                            color: const Color(0xFF2E7D32),
+                            icon: Icons.public,
+                          ),
+                          const SizedBox(width: 8),
+                          _SummaryCard(
+                            label: 'Private',
+                            count: privateCount,
+                            color: const Color(0xFF546E7A),
+                            icon: Icons.lock,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Pending Public Approval',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Approve clubs here before they appear in Discover and Search for students to join.',
+                              style: TextStyle(color: colorScheme.onSurfaceVariant),
+                            ),
+                            const SizedBox(height: 12),
+                            if (pendingGroups.isEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'No live requests yet. Demo requests are shown below.',
+                                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                  ),
+                                  ..._demoPendingApprovals.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final demo = entry.value;
+                                    final keywordList = demo['keywords']!.split(',').map((e) => e.trim()).toList();
+                                    final isReviewingDemo = _demoReviewing[index] == true;
+                                    final demoStatus = _demoReviewStatus[index] ?? 'pending';
+                                    final demoRejectionReason = _demoRejectionReason[index];
+                                    return Container(
+                                      margin: const EdgeInsets.only(top: 12),
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surfaceContainerLow,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  demo['name']!,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: demoStatus == 'approved'
+                                                      ? const Color(0xFFE8F5E9)
+                                                      : demoStatus == 'rejected'
+                                                          ? const Color(0xFFFFEBEE)
+                                                          : const Color(0xFFFFF3E0),
+                                                  borderRadius: BorderRadius.circular(999),
+                                                ),
+                                                child: Text(
+                                                  demoStatus == 'approved'
+                                                      ? 'Approved'
+                                                      : demoStatus == 'rejected'
+                                                          ? 'Rejected'
+                                                          : 'Pending',
+                                                  style: TextStyle(
+                                                    color: demoStatus == 'approved'
+                                                        ? const Color(0xFF2E7D32)
+                                                        : demoStatus == 'rejected'
+                                                            ? const Color(0xFFC62828)
+                                                            : const Color(0xFFF57F17),
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text('Created by ${demo['createdBy']}'),
+                                          const SizedBox(height: 4),
+                                          Text('${demo['members']} members'),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            demo['overview']!,
+                                            style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Wrap(
+                                            spacing: 6,
+                                            runSpacing: 6,
+                                            children: keywordList.map((keyword) => Chip(label: Text(keyword))).toList(),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: OutlinedButton(
+                                                  onPressed: isReviewingDemo || demoStatus != 'pending'
+                                                      ? null
+                                                      : () async {
+                                                          final reason = await _promptRejectionReason(demo['name']!);
+                                                          if (reason == null) return;
+                                                          if (reason.trim().isEmpty) {
+                                                            if (!mounted) return;
+                                                            ScaffoldMessenger.of(this.context).showSnackBar(
+                                                              const SnackBar(
+                                                                content: Text('Enter a rejection reason for the club owner.'),
+                                                              ),
+                                                            );
+                                                            return;
+                                                          }
+                                                          await _reviewDemoGroup(
+                                                            index,
+                                                            approve: false,
+                                                            rejectionReason: reason,
+                                                          );
+                                                        },
+                                                  style: OutlinedButton.styleFrom(
+                                                    foregroundColor: Colors.red,
+                                                  ),
+                                                  child: const Text('Reject'),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: ElevatedButton(
+                                                  onPressed: isReviewingDemo || demoStatus != 'pending'
+                                                      ? null
+                                                      : () => _reviewDemoGroup(
+                                                            index,
+                                                            approve: true,
+                                                          ),
+                                                  child: isReviewingDemo
+                                                      ? const SizedBox(
+                                                          width: 16,
+                                                          height: 16,
+                                                          child: CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color: Colors.white,
+                                                          ),
+                                                        )
+                                                      : const Text('Approve Public'),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (demoStatus == 'rejected' && demoRejectionReason != null) ...[
+                                            const SizedBox(height: 10),
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFFEBEE),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                'Owner-visible rejection reason: $demoRejectionReason',
+                                                style: const TextStyle(
+                                                  color: Color(0xFFB71C1C),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              )
+                            else
+                              ...pendingGroups.map((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final groupId = doc.id;
+                                final name = (data['name'] as String?) ?? 'Unnamed Club';
+                                final overview = (data['overview'] as String?) ?? '';
+                                final createdBy = (data['createdBy'] as String?) ?? 'Unknown';
+                                final keywords = List<String>.from(data['keywords'] ?? const <String>[]);
+                                final members = List<String>.from(data['members'] ?? const <String>[]);
+                                final isReviewing = _reviewing[groupId] == true;
+
+                                return Container(
+                                  margin: const EdgeInsets.only(top: 12),
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerLow,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFF3E0),
+                                              borderRadius: BorderRadius.circular(999),
+                                            ),
+                                            child: const Text(
+                                              'Pending',
+                                              style: TextStyle(
+                                                color: Color(0xFFF57F17),
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text('Created by $createdBy'),
+                                      const SizedBox(height: 4),
+                                      Text('${members.length} members'),
+                                      if (overview.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          overview,
+                                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                                        ),
+                                      ],
+                                      if (keywords.isNotEmpty) ...[
+                                        const SizedBox(height: 10),
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: keywords.take(6).map((keyword) {
+                                            return Chip(label: Text(keyword));
+                                          }).toList(),
+                                        ),
+                                      ],
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              onPressed: isReviewing
+                                                  ? null
+                                                  : () async {
+                                                      final reason = await _promptRejectionReason(name);
+                                                      if (reason == null) return;
+                                                      if (reason.trim().isEmpty) {
+                                                        if (!mounted) return;
+                                                        ScaffoldMessenger.of(this.context).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text('Enter a rejection reason for the club owner.'),
+                                                          ),
+                                                        );
+                                                        return;
+                                                      }
+                                                      await _reviewGroup(
+                                                        groupId,
+                                                        approve: false,
+                                                        rejectionReason: reason,
+                                                      );
+                                                    },
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                              ),
+                                              child: const Text('Reject'),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: isReviewing
+                                                  ? null
+                                                  : () => _reviewGroup(
+                                                        groupId,
+                                                        approve: true,
+                                                      ),
+                                              child: isReviewing
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child: CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : const Text('Approve Public'),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
 
@@ -355,13 +714,6 @@ class _SummaryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.07),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Column(
           children: [
@@ -377,246 +729,13 @@ class _SummaryCard extends StatelessWidget {
             ),
             Text(
               label,
-              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ClubCard extends StatelessWidget {
-  final _ClubActivity club;
-  final Color statusColor;
-  final String statusLabel;
-  final IconData statusIcon;
-
-  const _ClubCard({
-    required this.club,
-    required this.statusColor,
-    required this.statusLabel,
-    required this.statusIcon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: club.color.withValues(alpha: 0.15),
-                  child: Icon(club.icon, color: club.color, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        club.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Text(
-                        '${club.memberCount} members · Last active ${club.lastActive}',
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.black45),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: statusColor.withValues(alpha: 0.4), width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, size: 12, color: statusColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        statusLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Divider
-          Divider(height: 1, color: Colors.grey[200]),
-
-          // Stats row
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            child: Row(
-              children: [
-                _StatChip(
-                  icon: Icons.chat_bubble_outline,
-                  label: '${club.messagesThisMonth} msgs/mo',
-                  color: Colors.blueGrey,
-                ),
-                const SizedBox(width: 8),
-                _StatChip(
-                  icon: Icons.event_available,
-                  label: '${club.daysSinceLastMeeting}d since meeting',
-                  color: club.daysSinceLastMeeting > 60
-                      ? const Color(0xFFC62828)
-                      : club.daysSinceLastMeeting > 21
-                          ? const Color(0xFFF57F17)
-                          : const Color(0xFF2E7D32),
-                ),
-                const SizedBox(width: 8),
-                _StatChip(
-                  icon: Icons.people_outline,
-                  label:
-                      '${(club.engagementRate * 100).round()}% engaged',
-                  color: club.engagementRate < 0.2
-                      ? const Color(0xFFC62828)
-                      : club.engagementRate < 0.5
-                          ? const Color(0xFFF57F17)
-                          : const Color(0xFF2E7D32),
-                ),
-              ],
-            ),
-          ),
-
-          // Mini activity graph
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Weekly message activity (8 wks)',
-                  style: TextStyle(fontSize: 10, color: Colors.black38),
-                ),
-                const SizedBox(height: 6),
-                _MiniBarChart(values: club.weeklyMessages, color: club.color),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 12, color: color),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: FontWeight.w600),
-                overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _MiniBarChart extends StatelessWidget {
-  final List<int> values;
-  final Color color;
-
-  const _MiniBarChart({required this.values, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final maxVal = values.reduce((a, b) => a > b ? a : b);
-    final effectiveMax = maxVal == 0 ? 1 : maxVal;
-
-    return SizedBox(
-      height: 36,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: values.map((v) {
-          final ratio = v / effectiveMax;
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1.5),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: FractionallySizedBox(
-                      heightFactor: ratio == 0 ? 0.04 : ratio,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: ratio == 0
-                              ? Colors.grey[300]
-                              : color.withValues(alpha: 0.4 + ratio * 0.6),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

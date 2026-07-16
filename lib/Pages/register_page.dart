@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/chat_service.dart';
@@ -20,19 +21,44 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController adminCodeController = TextEditingController();
   final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
   final ImagePicker _imagePicker = ImagePicker();
   File? _profileImage;
+  bool _signUpAsAdmin = false;
+  bool _isSigningUp = false;
 
-  // sign user up method
+  Future<void> _rollbackFailedAdminSignup() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        await currentUser.delete();
+      } catch (_) {
+        // If delete fails for any reason, still force sign-out below.
+      }
+    }
+    await _authService.signOut();
+  }
+
   void signUserUp() async {
+    if (_isSigningUp) return;
     if (passwordController.text != confirmPasswordController.text) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Passwords don't match!")));
       return;
     }
+    if (_signUpAsAdmin && adminCodeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter the admin verification code.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSigningUp = true;
+    });
 
     try {
       await _authService.signUpWithEmailPassword(
@@ -47,11 +73,32 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         await _chatService.updateProfilePicture(imageUrl);
       }
+
+      if (_signUpAsAdmin) {
+        final code = adminCodeController.text.trim();
+        if (code != '9999') {
+          await _rollbackFailedAdminSignup();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid admin code. Account not created.')),
+          );
+          return;
+        }
+
+        await _chatService.setCurrentUserSchoolAdmin(true);
+        await FirebaseAuth.instance.currentUser?.getIdTokenResult(true);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSigningUp = false;
+        });
       }
     }
   }
@@ -72,6 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    adminCodeController.dispose();
     super.dispose();
   }
 
@@ -155,11 +203,50 @@ class _RegisterPageState extends State<RegisterPage> {
                   hintText: 'Confirm Password',
                   obscureText: true,
                 ),
+                const SizedBox(height: 12),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: CheckboxListTile(
+                      value: _signUpAsAdmin,
+                      onChanged: (value) {
+                        setState(() {
+                          _signUpAsAdmin = value ?? false;
+                        });
+                      },
+                      title: const Text('Sign up as admin'),
+                      subtitle: const Text(
+                        'After signup, you must verify with a code to unlock admin access.',
+                      ),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                  ),
+                ),
+                if (_signUpAsAdmin) ...[
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                    child: TextField(
+                      controller: adminCodeController,
+                      keyboardType: TextInputType.number,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Admin verification code',
+                        hintText: 'Enter code',
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 25),
 
                 // Sign up button
                 GestureDetector(
-                  onTap: signUserUp,
+                  onTap: _isSigningUp ? null : signUserUp,
                   child: Container(
                     padding: const EdgeInsets.all(25),
                     margin: const EdgeInsets.symmetric(horizontal: 25),
@@ -176,15 +263,24 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
+                    child: Center(
+                      child: _isSigningUp
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                 ),

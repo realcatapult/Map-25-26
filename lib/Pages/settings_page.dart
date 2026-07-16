@@ -168,6 +168,12 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _signOut() async {
+    await _authService.signOut();
+    if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -482,7 +488,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: OutlinedButton.icon(
                             onPressed: _isSaving
                                 ? null
-                                : () => _authService.signOut(),
+                                : _signOut,
                             icon: const Icon(Icons.logout, color: Colors.red),
                             label: const Text(
                               'Sign Out',
