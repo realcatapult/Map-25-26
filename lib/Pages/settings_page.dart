@@ -4,6 +4,7 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/theme_service.dart';
 import 'package:login_ui/components/interests_picker_dialog.dart';
+import 'package:login_ui/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -179,13 +180,14 @@ class _SettingsPageState extends State<SettingsPage> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        flexibleSpace: const GradientAppBarBackground(),
         title: const Text('Settings', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
+      body: NeonBackground(
+        child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -455,7 +457,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: ElevatedButton(
                             onPressed: _isSaving ? null : _saveUserData,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
+                              backgroundColor: AppColors.brass,
+                              foregroundColor: AppColors.navy,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -466,14 +469,14 @@ class _SettingsPageState extends State<SettingsPage> {
                                     height: 20,
                                     width: 20,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: AppColors.navy,
                                       strokeWidth: 2,
                                     ),
                                   )
                                 : const Text(
                                     'Save Changes',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.navy,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -513,6 +516,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+      ),
     );
   }
 

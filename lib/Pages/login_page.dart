@@ -3,6 +3,7 @@ import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/components/my_button.dart';
 import 'package:login_ui/components/square_tile.dart';
 import 'package:login_ui/services/auth_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback? showRegisterPage;
@@ -45,8 +46,9 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: NeonBackground(
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -199,6 +201,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

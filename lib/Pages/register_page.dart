@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/chat_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -126,8 +127,9 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: NeonBackground(
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -311,6 +313,7 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

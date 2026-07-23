@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 // ── Placeholder demo data ──────────────────────────────────────────────────
 class DemoClub {
@@ -122,16 +123,17 @@ class DiscoverPage extends StatelessWidget {
     final chatService = ChatService();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        flexibleSpace: const GradientAppBarBackground(),
         title: const Text(
           'Discover Clubs',
           style: TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: NeonBackground(
+        child: StreamBuilder<QuerySnapshot>(
         stream: chatService.getPublicGroups(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -188,6 +190,7 @@ class DiscoverPage extends StatelessWidget {
             ],
           );
         },
+      ),
       ),
     );
   }

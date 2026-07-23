@@ -68,12 +68,12 @@ class MyApp extends StatelessWidget {
             primary: primaryColor,
             secondary: secondaryColor,
             surface: surface,
-            surfaceContainerLow: isDark ? AppColors.surface : const Color(0xFFF1F5FB),
+            surfaceContainerLow: isDark ? AppColors.surface : const Color(0xFFF0EBDF),
             surfaceContainerHigh: surfaceHigh,
             surfaceContainerHighest: surfaceHigh,
             onSurface: baseTextColor,
             onSurfaceVariant: mutedTextColor,
-            onPrimary: Colors.white,
+            onPrimary: AppColors.navy,
           ),
       scaffoldBackgroundColor: isDark ? AppColors.bg : AppColors.bgLight,
       appBarTheme: const AppBarTheme(
@@ -87,8 +87,8 @@ class MyApp extends StatelessWidget {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          foregroundColor: AppColors.navy,
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),

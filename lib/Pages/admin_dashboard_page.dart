@@ -4,6 +4,7 @@ import 'package:login_ui/Pages/admin_activity_page.dart';
 import 'package:login_ui/Pages/club_activity_check_page.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/chat_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 class AdminDashboardPage extends StatelessWidget {
   AdminDashboardPage({super.key});
@@ -22,20 +23,21 @@ class AdminDashboardPage extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        iconTheme: IconThemeData(color: colorScheme.onPrimary),
-        title: Text(
+        flexibleSpace: const GradientAppBarBackground(),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
           'Admin Dashboard',
-          style: TextStyle(color: colorScheme.onPrimary),
+          style: TextStyle(color: Colors.white),
         ),
-        actions: [
-          Icon(Icons.admin_panel_settings, color: colorScheme.onPrimary),
-          const SizedBox(width: 16),
+        actions: const [
+          Icon(Icons.admin_panel_settings, color: Colors.white),
+          SizedBox(width: 16),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: NeonBackground(
+        child: StreamBuilder<QuerySnapshot>(
         stream: _chatService.getAllGroupsForAdmin(),
         builder: (context, snapshot) {
           final docs = snapshot.data?.docs ?? [];
@@ -110,6 +112,7 @@ class AdminDashboardPage extends StatelessWidget {
             ],
           );
         },
+      ),
       ),
     );
   }

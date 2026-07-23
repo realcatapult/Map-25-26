@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:login_ui/data/interests_catalog.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 Future<List<String>?> showInterestsPickerDialog(
   BuildContext context, {
@@ -30,7 +31,7 @@ Future<List<String>?> showInterestsPickerDialog(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(26),
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF0E7490), Color(0xFF166534)],
+                colors: AppColors.brandGradient,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -54,7 +55,7 @@ Future<List<String>?> showInterestsPickerDialog(
                       height: 150,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.cyanAccent.withValues(alpha: 0.18),
+                        color: AppColors.brass.withValues(alpha: 0.22),
                       ),
                     ),
                   ),
@@ -66,7 +67,7 @@ Future<List<String>?> showInterestsPickerDialog(
                       height: 170,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.lightGreenAccent.withValues(alpha: 0.18),
+                        color: AppColors.brassLight.withValues(alpha: 0.16),
                       ),
                     ),
                   ),
@@ -129,17 +130,17 @@ Future<List<String>?> showInterestsPickerDialog(
                                 word,
                                 style: TextStyle(
                                   color: isSelected
-                                      ? const Color(0xFF001219)
+                                      ? AppColors.navy
                                       : Colors.white,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               selected: isSelected,
-                              backgroundColor: const Color(0xFF1A3550),
-                              selectedColor: const Color(0xFF8BFFB0),
+                              backgroundColor: AppColors.navyMid,
+                              selectedColor: AppColors.brass,
                               side: BorderSide(
                                 color: isSelected
-                                    ? const Color(0xFF8BFFB0)
+                                    ? AppColors.brass
                                     : Colors.white.withValues(alpha: 0.55),
                               ),
                               shape: RoundedRectangleBorder(
@@ -171,17 +172,17 @@ Future<List<String>?> showInterestsPickerDialog(
                                   interest,
                                   style: TextStyle(
                                     color: isSelected
-                                        ? const Color(0xFF001219)
+                                        ? AppColors.navy
                                         : Colors.white,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 selected: isSelected,
-                                backgroundColor: const Color(0xFF1A3550),
-                                selectedColor: const Color(0xFF8BFFB0),
+                                backgroundColor: AppColors.navyMid,
+                                selectedColor: AppColors.brass,
                                 side: BorderSide(
                                   color: isSelected
-                                      ? const Color(0xFF8BFFB0)
+                                      ? AppColors.brass
                                       : Colors.white.withValues(alpha: 0.55),
                                 ),
                                 shape: RoundedRectangleBorder(
@@ -233,8 +234,8 @@ Future<List<String>?> showInterestsPickerDialog(
                                   isOnboarding ? 'Save & Continue' : 'Save',
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF0B3D2E),
+                                  backgroundColor: AppColors.brass,
+                                  foregroundColor: AppColors.navy,
                                   disabledBackgroundColor: Colors.white24,
                                   disabledForegroundColor: Colors.white60,
                                 ),

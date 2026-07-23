@@ -1,42 +1,52 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Blue-glass design tokens: the original blue palette + glassmorphism.
+/// Navy + White + Brass design tokens with glassmorphism and warm glow.
 class AppColors {
-  // Brand blues (unchanged from the original theme).
-  static const Color primary = Color(0xFF1976D2);
-  static const Color secondary = Color(0xFF42A5F5);
-  static const Color deepBlue = Color(0xFF0D47A1);
+  // Brass is the primary accent (warm gold).
+  static const Color brass = Color(0xFFC9A227);
+  static const Color brassLight = Color(0xFFE6C55A);
+  static const Color brassDeep = Color(0xFF9A7B1B);
 
-  // Kept for widgets that referenced accents; mapped onto the blue family so
-  // "glow" highlights read as blue rather than cyan/neon.
-  static const Color cyan = Color(0xFF42A5F5);
-  static const Color teal = Color(0xFF64B5F6);
-  static const Color green = Color(0xFF90CAF9);
+  // Navy is the brand/base color.
+  static const Color navy = Color(0xFF0A1836);
+  static const Color navyMid = Color(0xFF14294F);
+  static const Color navyDeep = Color(0xFF060F24);
 
-  // Base surfaces (dark) — the original navy tones.
-  static const Color bg = Color(0xFF0F172A); // scaffold background
-  static const Color surface = Color(0xFF1E293B); // card / elevated panel
-  static const Color surfaceHigh = Color(0xFF243447); // higher elevation
+  // Primary/secondary map to brass + navy so buttons/highlights read brass.
+  static const Color primary = brass;
+  static const Color secondary = brassLight;
+  static const Color deepBlue = navy;
 
-  // Light-mode base (original).
-  static const Color bgLight = Color(0xFFF7FAFC);
+  // Legacy accent aliases (many widgets reference these) → brass family, so
+  // every existing "glow"/highlight becomes brass automatically.
+  static const Color cyan = brass;
+  static const Color teal = brassLight;
+  static const Color green = brassLight;
+
+  // Base surfaces (dark navy).
+  static const Color bg = navy; // scaffold background
+  static const Color surface = Color(0xFF13254A); // card / elevated panel
+  static const Color surfaceHigh = Color(0xFF1B3059); // higher elevation
+
+  // Light-mode base — soft warm-white (navy text, brass accents).
+  static const Color bgLight = Color(0xFFF6F3EC); // warm ivory
   static const Color surfaceLight = Color(0xFFFFFFFF);
 
-  static const Color textDark = Color(0xFFFFFFFF);
-  static const Color textMutedDark = Color(0xFF9FB3C8);
-  static const Color textLight = Color(0xFF102A43);
-  static const Color textMutedLight = Color(0xFF5B7089);
+  static const Color textDark = Color(0xFFF3F6FC); // near-white on navy
+  static const Color textMutedDark = Color(0xFFAEBBD4);
+  static const Color textLight = navy; // navy text in light mode
+  static const Color textMutedLight = Color(0xFF5A6B8A);
 
-  /// Signature diagonal brand gradient (all blue).
+  /// Signature diagonal brand gradient (navy → brass hint).
   static const List<Color> brandGradient = [
-    Color(0xFF0D47A1),
-    Color(0xFF1976D2),
-    Color(0xFF42A5F5),
+    Color(0xFF060F24),
+    Color(0xFF0A1836),
+    Color(0xFF1B3059),
   ];
 
-  /// Accent gradient used on buttons / highlights (blue).
-  static const List<Color> accentGradient = [primary, secondary];
+  /// Accent gradient used on buttons / highlights (brass).
+  static const List<Color> accentGradient = [brass, brassLight];
 }
 
 /// A full-screen animated-looking gradient backdrop with soft neon glows.
@@ -48,33 +58,42 @@ class NeonBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (!isDark) {
-      return Container(color: AppColors.bgLight, child: child);
-    }
+
+    // Base gradient + glow tints differ per mode, but BOTH get the wallpaper.
+    final baseGradient = isDark
+        ? const [Color(0xFF060F24), Color(0xFF0C1B3A)]
+        : const [Color(0xFFF9F6EF), Color(0xFFEDE7DA)];
+    final glowTop = isDark
+        ? AppColors.brass.withValues(alpha: 0.20)
+        : AppColors.brass.withValues(alpha: 0.22);
+    final glowBottom = isDark
+        ? AppColors.navyMid.withValues(alpha: 0.45)
+        : AppColors.navy.withValues(alpha: 0.10);
+
     return Stack(
       children: [
-        const Positioned.fill(
+        Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF070B14), Color(0xFF0B1426)],
+                colors: baseGradient,
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
         ),
-        // Soft neon glow, top-right.
+        // Warm brass glow, top-right.
         Positioned(
           top: -120,
           right: -80,
-          child: _glow(AppColors.cyan.withValues(alpha: 0.16), 280),
+          child: _glow(glowTop, 280),
         ),
-        // Soft neon glow, bottom-left.
+        // Navy glow, bottom-left.
         Positioned(
           bottom: -140,
           left: -90,
-          child: _glow(AppColors.green.withValues(alpha: 0.12), 300),
+          child: _glow(glowBottom, 300),
         ),
         child,
       ],

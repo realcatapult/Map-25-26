@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:login_ui/services/ai_service.dart';
 import 'package:login_ui/components/jarvis_avatar.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 class SupportChatPage extends StatefulWidget {
   const SupportChatPage({super.key});
@@ -79,22 +80,23 @@ class _SupportChatPageState extends State<SupportChatPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary,
+        flexibleSpace: const GradientAppBarBackground(),
         title: Row(
           children: [
             const JarvisAvatar(radius: 14),
             const SizedBox(width: 10),
-            Text(
+            const Text(
               'Jarvis',
-              style: TextStyle(color: colorScheme.onPrimary),
+              style: TextStyle(color: Colors.white),
             ),
           ],
         ),
-        iconTheme: IconThemeData(color: colorScheme.onPrimary),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
+      body: NeonBackground(
+        child: Column(
         children: [
           Expanded(
             child: ListView.builder(
@@ -210,6 +212,7 @@ class _SupportChatPageState extends State<SupportChatPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

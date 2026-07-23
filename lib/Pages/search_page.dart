@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/discover_page.dart';
+import 'package:login_ui/theme/app_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SearchPage extends StatefulWidget {
@@ -191,13 +192,14 @@ class _SearchPageState extends State<SearchPage> {
     final recommended = _buildRecommendedClubs();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        flexibleSpace: const GradientAppBarBackground(),
         title: const Text('Search', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
+      body: NeonBackground(
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -392,6 +394,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

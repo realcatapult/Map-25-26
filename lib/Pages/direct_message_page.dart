@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
+import 'package:login_ui/theme/app_theme.dart';
 
 class DirectMessagePage extends StatefulWidget {
   final String threadId;
@@ -61,16 +62,17 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: colorScheme.primary,
+        flexibleSpace: const GradientAppBarBackground(),
         title: Text(
           widget.otherEmail,
-          style: TextStyle(color: colorScheme.onPrimary),
+          style: const TextStyle(color: Colors.white),
         ),
-        iconTheme: IconThemeData(color: colorScheme.onPrimary),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
+      body: NeonBackground(
+        child: Column(
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -214,6 +216,7 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

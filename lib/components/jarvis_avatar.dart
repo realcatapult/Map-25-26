@@ -90,37 +90,37 @@ class _JarvisAvatarPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final r = size.width / 2;
 
-    // Background gradient disc (deep blue → navy).
+    // Background gradient disc (navy).
     final bgPaint = Paint()
       ..shader = const RadialGradient(
-        colors: [Color(0xFF1976D2), Color(0xFF0D1B34)],
+        colors: [Color(0xFF14294F), Color(0xFF060F24)],
         stops: [0.0, 1.0],
       ).createShader(Rect.fromCircle(center: center, radius: r));
     canvas.drawCircle(center, r, bgPaint);
 
-    // Pulsing outer glow ring (light blue), grows/brightens with pulse.
+    // Pulsing outer glow ring (brass), grows/brightens with pulse.
     final glowRing = Paint()
-      ..color = const Color(0xFF64B5F6)
-          .withValues(alpha: 0.35 + 0.45 * pulse)
+      ..color = const Color(0xFFE6C55A)
+          .withValues(alpha: 0.30 + 0.45 * pulse)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * (0.10 + 0.14 * pulse));
     canvas.drawCircle(center, r * 0.86, glowRing);
 
-    // Crisp outer ring.
+    // Crisp outer ring (brass).
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = r * 0.10
-      ..color = const Color(0xFF90CAF9).withValues(alpha: 0.9);
+      ..color = const Color(0xFFC9A227).withValues(alpha: 0.95);
     canvas.drawCircle(center, r * 0.82, ringPaint);
 
-    // Core orb with a soft glow.
+    // Core orb with a soft brass glow.
     final glowPaint = Paint()
-      ..color = const Color(0xFF42A5F5).withValues(alpha: 0.55)
+      ..color = const Color(0xFFC9A227).withValues(alpha: 0.55)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.25);
     canvas.drawCircle(center, r * (0.40 + 0.05 * pulse), glowPaint);
 
     final corePaint = Paint()
       ..shader = const LinearGradient(
-        colors: [Color(0xFFBBDEFB), Color(0xFF1E88E5)],
+        colors: [Color(0xFFF3E4A8), Color(0xFFC9A227)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromCircle(center: center, radius: r * 0.42));
