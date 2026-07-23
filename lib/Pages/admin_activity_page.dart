@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/chat_service.dart';
+import 'package:login_ui/components/unity_logo.dart';
 
 class AdminActivityPage extends StatefulWidget {
   final bool bypassAccessCheck;
@@ -274,7 +275,7 @@ class _AdminActivityPageState extends State<AdminActivityPage> {
       future: _chatService.isCurrentUserSchoolAdmin(),
       builder: (context, accessSnapshot) {
         if (accessSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const UnityLoadingScreen();
         }
 
         if (accessSnapshot.data != true) {
@@ -306,7 +307,7 @@ class _AdminActivityPageState extends State<AdminActivityPage> {
             stream: _chatService.getAllGroupsForAdmin(),
             builder: (context, allGroupsSnapshot) {
               if (allGroupsSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const UnityLoadingIndicator();
               }
 
               if (allGroupsSnapshot.hasError) {
@@ -328,7 +329,7 @@ class _AdminActivityPageState extends State<AdminActivityPage> {
                 stream: _chatService.getPendingPublicApprovalGroups(),
                 builder: (context, pendingSnapshot) {
                   if (pendingSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const UnityLoadingIndicator();
                   }
 
                   if (pendingSnapshot.hasError) {

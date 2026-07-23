@@ -5,6 +5,7 @@ import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/services/theme_service.dart';
 import 'package:login_ui/components/interests_picker_dialog.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -188,7 +189,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: NeonBackground(
         child: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const UnityLoadingIndicator()
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(

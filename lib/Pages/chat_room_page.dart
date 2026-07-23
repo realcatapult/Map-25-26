@@ -13,6 +13,7 @@ import 'package:login_ui/data/interests_catalog.dart';
 import 'package:login_ui/services/ai_service.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final String groupId;
@@ -351,10 +352,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 Wrap(
                   spacing: 8,
                   children: [
-                    Colors.black,
+                    AppColors.navy,
+                    AppColors.brass,
                     Colors.blue,
                     Colors.green,
-                    Colors.grey,
                     Colors.orange,
                   ].map((color) {
                     final isSelected = themeColor == color.toARGB32();
@@ -1422,7 +1423,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     stream: _chatService.getMessages(widget.groupId),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const UnityLoadingIndicator();
                       }
                       if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
@@ -1551,7 +1552,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                                     style: TextStyle(
                                                       fontSize: 10,
                                                       color: Jarvis.isJarvis(senderEmail)
-                                                          ? const Color(0xFF0E7490)
+                                                          ? AppColors.brass
                                                           : colorScheme.onSurfaceVariant,
                                                       fontWeight: FontWeight.bold,
                                                     ),

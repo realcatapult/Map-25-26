@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 
 // ── Placeholder demo data ──────────────────────────────────────────────────
 class DemoClub {
@@ -137,7 +138,7 @@ class DiscoverPage extends StatelessWidget {
         stream: chatService.getPublicGroups(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const UnityLoadingIndicator();
           }
 
           if (snapshot.hasError) {
@@ -500,11 +501,11 @@ class ClubCard extends StatelessWidget {
                               );
                             },
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.black),
+                              side: const BorderSide(color: AppColors.brass),
                             ),
                             child: const Text(
                               'Open',
-                              style: TextStyle(color: Colors.black),
+                              style: TextStyle(color: AppColors.brass),
                             ),
                           )
                         : ElevatedButton(

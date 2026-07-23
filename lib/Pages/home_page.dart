@@ -8,6 +8,7 @@ import 'package:login_ui/Pages/direct_message_page.dart';
 import 'package:login_ui/Pages/settings_page.dart';
 import 'package:login_ui/Pages/search_page.dart';
 import 'package:login_ui/components/interests_picker_dialog.dart';
+import 'package:login_ui/components/unity_logo.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/theme/app_theme.dart';
 
@@ -342,7 +343,7 @@ class _HomePageState extends State<HomePage> {
                 });
                 _loadEventsForGroups(_enabledGroupIds.toList());
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.navy),
               child: const Text('Apply', style: TextStyle(color: Colors.white)),
             ),
           ],
@@ -399,20 +400,14 @@ class _HomePageState extends State<HomePage> {
         flexibleSpace: const GradientAppBarBackground(),
         title: Row(
           children: [
-            const Icon(Icons.hub, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(
+            const UnityLogo(size: 30),
+            const SizedBox(width: 10),
+            const Text(
               'GroupApp',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
-                shadows: [
-                  Shadow(
-                    color: AppColors.secondary.withValues(alpha: 0.8),
-                    blurRadius: 12,
-                  ),
-                ],
               ),
             ),
           ],
@@ -423,7 +418,7 @@ class _HomePageState extends State<HomePage> {
         stream: _chatService.getUserGroups(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const UnityLoadingIndicator();
           }
 
           if (snapshot.hasError) {

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:login_ui/components/my_textfield.dart';
 import 'package:login_ui/components/my_button.dart';
 import 'package:login_ui/components/square_tile.dart';
+import 'dart:math' as math;
 import 'package:login_ui/services/auth_service.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 
 class LoginPage extends StatefulWidget {
   final VoidCallback? showRegisterPage;
@@ -56,24 +58,24 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
+
+                // Company logo (Unity mark)
+                const _PulsingUnityLogo(size: 100),
+                const SizedBox(height: 18),
 
                 // App name
-                Text(
+                const Text(
                   'GroupApp',
                   style: TextStyle(
-                    fontSize: 45,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                    color: AppColors.brass,
                   ),
                 ),
 
-                // logo
-                // const Icon(
-                // Icons.lock,
-                // size: 45,
-                // ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
 
                 // welcome back
                 Text(
@@ -203,6 +205,49 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
       ),
+    );
+  }
+}
+
+/// The Unity logo with a gentle breathing pulse + soft rotation drift, for the
+/// login screen hero.
+class _PulsingUnityLogo extends StatefulWidget {
+  final double size;
+  const _PulsingUnityLogo({required this.size});
+
+  @override
+  State<_PulsingUnityLogo> createState() => _PulsingUnityLogoState();
+}
+
+class _PulsingUnityLogoState extends State<_PulsingUnityLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 5),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        final pulse = 1 + 0.04 * math.sin(t * 2 * math.pi);
+        final drift = math.sin(t * 2 * math.pi) * 0.06;
+        return Transform.rotate(
+          angle: drift,
+          child: Transform.scale(
+            scale: pulse,
+            child: UnityLogo(size: widget.size),
+          ),
+        );
+      },
     );
   }
 }

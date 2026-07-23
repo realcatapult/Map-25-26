@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 
 class DirectMessagePage extends StatefulWidget {
   final String threadId;
@@ -79,7 +80,7 @@ class _DirectMessagePageState extends State<DirectMessagePage> {
               stream: _chatService.getDirectMessages(widget.threadId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const UnityLoadingIndicator();
                 }
 
                 if (snapshot.hasError) {

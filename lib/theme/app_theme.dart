@@ -24,12 +24,12 @@ class AppColors {
   static const Color teal = brassLight;
   static const Color green = brassLight;
 
-  // Base surfaces (dark navy).
-  static const Color bg = navy; // scaffold background
-  static const Color surface = Color(0xFF13254A); // card / elevated panel
-  static const Color surfaceHigh = Color(0xFF1B3059); // higher elevation
+  // Base surfaces (DARK mode) — deeper blues over soft black.
+  static const Color bg = Color(0xFF070C18); // scaffold: soft-black navy
+  static const Color surface = Color(0xFF0E1E3D); // card / panel: deep blue
+  static const Color surfaceHigh = Color(0xFF152A50); // higher elevation
 
-  // Light-mode base — soft warm-white (navy text, brass accents).
+  // Light-mode base — warm ivory white (navy text, brass accents).
   static const Color bgLight = Color(0xFFF6F3EC); // warm ivory
   static const Color surfaceLight = Color(0xFFFFFFFF);
 
@@ -38,19 +38,28 @@ class AppColors {
   static const Color textLight = navy; // navy text in light mode
   static const Color textMutedLight = Color(0xFF5A6B8A);
 
-  /// Signature diagonal brand gradient (navy → brass hint).
+  /// Signature diagonal brand gradient — clearly navy blue (light mode).
   static const List<Color> brandGradient = [
-    Color(0xFF060F24),
-    Color(0xFF0A1836),
-    Color(0xFF1B3059),
+    Color(0xFF1E3A6E),
+    Color(0xFF27509A),
+    Color(0xFF3465C0),
+  ];
+
+  /// Deeper navy gradient for dark mode.
+  static const List<Color> brandGradientDark = [
+    Color(0xFF0E1E3D),
+    Color(0xFF163060),
+    Color(0xFF1E4285),
   ];
 
   /// Accent gradient used on buttons / highlights (brass).
   static const List<Color> accentGradient = [brass, brassLight];
 }
 
-/// A full-screen animated-looking gradient backdrop with soft neon glows.
-/// Wrap a Scaffold body (or use as Scaffold background) to get the vibe.
+/// Full-screen gradient wallpaper with two translucent accent circles.
+///
+/// Dark mode: deeper blues / soft-black base. Light mode: warm ivory with
+/// navy + brass accents (strictly the navy/white/brass palette).
 class NeonBackground extends StatelessWidget {
   final Widget child;
   const NeonBackground({super.key, required this.child});
@@ -59,16 +68,18 @@ class NeonBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Base gradient + glow tints differ per mode, but BOTH get the wallpaper.
+    // Base gradient.
     final baseGradient = isDark
-        ? const [Color(0xFF060F24), Color(0xFF0C1B3A)]
-        : const [Color(0xFFF9F6EF), Color(0xFFEDE7DA)];
-    final glowTop = isDark
-        ? AppColors.brass.withValues(alpha: 0.20)
-        : AppColors.brass.withValues(alpha: 0.22);
-    final glowBottom = isDark
-        ? AppColors.navyMid.withValues(alpha: 0.45)
-        : AppColors.navy.withValues(alpha: 0.10);
+        ? const [Color(0xFF05070E), Color(0xFF0B1A33)] // soft-black → deep blue
+        : const [Color(0xFFFBF9F3), Color(0xFFEFE9DC)]; // warm ivory
+
+    // Two translucent accent circles (brass + navy).
+    final circleTop = isDark
+        ? AppColors.brass.withValues(alpha: 0.14)
+        : AppColors.brass.withValues(alpha: 0.16);
+    final circleBottom = isDark
+        ? const Color(0xFF2A4E86).withValues(alpha: 0.22) // deep blue
+        : AppColors.navy.withValues(alpha: 0.08);
 
     return Stack(
       children: [
@@ -83,41 +94,35 @@ class NeonBackground extends StatelessWidget {
             ),
           ),
         ),
-        // Warm brass glow, top-right.
+        // Translucent circle, top-right.
         Positioned(
-          top: -120,
-          right: -80,
-          child: _glow(glowTop, 280),
+          top: -90,
+          right: -70,
+          child: _circle(circleTop, 260),
         ),
-        // Navy glow, bottom-left.
+        // Translucent circle, bottom-left.
         Positioned(
-          bottom: -140,
-          left: -90,
-          child: _glow(glowBottom, 300),
+          bottom: -110,
+          left: -80,
+          child: _circle(circleBottom, 300),
         ),
         child,
       ],
     );
   }
 
-  Widget _glow(Color color, double size) {
+  Widget _circle(Color color, double size) {
     return IgnorePointer(
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
-          boxShadow: [
-            BoxShadow(color: color, blurRadius: 120, spreadRadius: 40),
-          ],
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       ),
     );
   }
 }
 
-/// A frosted "glassmorphism" card — translucent fill, blur, thin neon edge.
+/// A frosted "glassmorphism" card — translucent fill, blur, thin edge.
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -241,17 +246,25 @@ class NeonButton extends StatelessWidget {
 }
 
 /// A gradient app bar background (drop into AppBar.flexibleSpace).
+///
+/// Uses SizedBox.expand so the gradient fills the entire app bar area — a bare
+/// DecoratedBox has zero size and would leave the (transparent) app bar black.
 class GradientAppBarBackground extends StatelessWidget {
   const GradientAppBarBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppColors.brandGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? AppColors.brandGradientDark
+                : AppColors.brandGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ),
     );

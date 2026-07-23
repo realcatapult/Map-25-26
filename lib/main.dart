@@ -9,6 +9,7 @@ import 'Pages/home_page.dart';
 import 'services/chat_service.dart';
 import 'services/theme_service.dart';
 import 'theme/app_theme.dart';
+import 'components/unity_logo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,28 +19,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  Widget _postAuthLanding() {
-    final chatService = ChatService();
-    return FutureBuilder<bool>(
-      future: chatService.isCurrentUserSchoolAdmin(),
-      builder: (context, adminSnapshot) {
-        if (adminSnapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: NeonBackground(
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
-
-        if (adminSnapshot.data == true) {
-          return AdminDashboardPage();
-        }
-
-        return const HomePage();
-      },
-    );
-  }
 
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
@@ -137,28 +116,73 @@ class MyApp extends StatelessWidget {
           themeMode: mode,
           theme: _buildTheme(Brightness.light),
           darkTheme: _buildTheme(Brightness.dark),
-          home: StreamBuilder<User?>(
-            stream: FirebaseAuth.instance.idTokenChanges(),
-            builder: (context, snapshot) {
-              // Show loading spinner while checking auth state
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: NeonBackground(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                );
-              }
-
-              // If user is logged in, show HomePage
-              if (snapshot.hasData) {
-                return _postAuthLanding();
-              }
-
-              // If user is not logged in, show AuthPage
-              return const AuthPage();
-            },
-          ),
+          home: const _AuthGate(),
         );
+      },
+    );
+  }
+}
+
+/// Watches auth state, shows the Unity loading screen while resolving, and
+/// plays the split-apart reveal exactly once when the user logs in.
+class _AuthGate extends StatefulWidget {
+  const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  final ChatService _chatService = ChatService();
+
+  // True until the reveal animation has played for the current session, so we
+  // only split-reveal on an actual login transition (not on every rebuild).
+  bool _revealPending = false;
+  bool _wasLoggedIn = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.idTokenChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const UnityLoadingScreen();
+        }
+
+        final loggedIn = snapshot.hasData;
+
+        // Detect the logged-out -> logged-in transition to arm the reveal.
+        if (loggedIn && !_wasLoggedIn) {
+          _revealPending = true;
+        }
+        _wasLoggedIn = loggedIn;
+
+        if (!loggedIn) {
+          return const AuthPage();
+        }
+
+        final landing = _postAuthLanding();
+
+        if (_revealPending) {
+          _revealPending = false;
+          return UnityRevealOverlay(child: landing);
+        }
+        return landing;
+      },
+    );
+  }
+
+  Widget _postAuthLanding() {
+    return FutureBuilder<bool>(
+      future: _chatService.isCurrentUserSchoolAdmin(),
+      builder: (context, adminSnapshot) {
+        if (adminSnapshot.connectionState == ConnectionState.waiting) {
+          return const UnityLoadingScreen();
+        }
+        if (adminSnapshot.data == true) {
+          return AdminDashboardPage();
+        }
+        return const HomePage();
       },
     );
   }

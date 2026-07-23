@@ -4,6 +4,7 @@ import 'package:login_ui/services/chat_service.dart';
 import 'package:login_ui/Pages/chat_room_page.dart';
 import 'package:login_ui/Pages/discover_page.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SearchPage extends StatefulWidget {
@@ -353,7 +354,7 @@ class _SearchPageState extends State<SearchPage> {
             else
               Expanded(
                 child: _isLoadingClubs
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const UnityLoadingIndicator()
                     : ListView(
                         children: [
                           const Padding(

@@ -10,6 +10,7 @@ import 'package:login_ui/Pages/support_chat_page.dart';
 import 'package:login_ui/components/jarvis_avatar.dart';
 import 'package:login_ui/data/interests_catalog.dart';
 import 'package:login_ui/theme/app_theme.dart';
+import 'package:login_ui/components/unity_logo.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -31,7 +32,7 @@ class _ChatListPageState extends State<ChatListPage> {
   bool _isCreating = false;
   bool _isPublic = true;
   String _whoCanPost = 'all';
-  int _themeColor = Colors.black.toARGB32();
+  int _themeColor = AppColors.navy.toARGB32();
   String _themeIcon = 'group';
   XFile? _bannerImageFile;
 
@@ -218,10 +219,10 @@ class _ChatListPageState extends State<ChatListPage> {
                   spacing: 8,
                   children:
                       [
-                        Colors.black,
+                        AppColors.navy,
+                        AppColors.brass,
                         Colors.blue,
                         Colors.green,
-                        Colors.grey,
                         Colors.orange,
                       ].map((color) {
                         final isSelected = _themeColor == color.toARGB32();
@@ -355,7 +356,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         }
                       }
                     },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.navy),
               child: _isCreating
                   ? const SizedBox(
                       width: 16,
@@ -442,17 +443,11 @@ class _ChatListPageState extends State<ChatListPage> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         flexibleSpace: const GradientAppBarBackground(),
-        title: Text(
+        title: const Text(
           'Messages',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
-            shadows: [
-              Shadow(
-                color: AppColors.cyan.withValues(alpha: 0.6),
-                blurRadius: 12,
-              ),
-            ],
           ),
         ),
         actions: [
@@ -485,7 +480,7 @@ class _ChatListPageState extends State<ChatListPage> {
             builder: (context, groupSnapshot) {
               if (dmSnapshot.connectionState == ConnectionState.waiting ||
                   groupSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const UnityLoadingIndicator();
               }
 
               if (dmSnapshot.hasError) {
@@ -739,23 +734,11 @@ class _ChatListPageState extends State<ChatListPage> {
             child: Icon(Icons.login, color: colorScheme.onSecondary),
           ),
           const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.cyan.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: FloatingActionButton(
-              heroTag: 'create',
-              onPressed: _showCreateGroupDialog,
-              backgroundColor: colorScheme.primary,
-              child: Icon(Icons.add, color: colorScheme.onPrimary),
-            ),
+          FloatingActionButton(
+            heroTag: 'create',
+            onPressed: _showCreateGroupDialog,
+            backgroundColor: colorScheme.primary,
+            child: Icon(Icons.add, color: colorScheme.onPrimary),
           ),
         ],
       ),
